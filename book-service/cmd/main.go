@@ -40,7 +40,12 @@ func main() {
 	bookS := book.NewBookService(bookR)
 	bookRouter := httphandler.NewBookRouter(bookS)
 
-	r.Mount("/api/books", bookRouter)
+	adminR := postgres.NewAdminRepo(db)
+	adminS := book.NewAdminService(adminR)
+	adminRouter := httphandler.NewAdminRouter(adminS)
+
+	r.Mount("/api", bookRouter)
+	r.Mount("/admin", adminRouter)
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

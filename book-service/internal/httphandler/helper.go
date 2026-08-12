@@ -4,6 +4,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
+
+	"book-service/internal/book"
 )
 
 var (
@@ -15,5 +17,14 @@ func errorResponse(w http.ResponseWriter, err error) {
 
 	log.Println(err)
 
-	w.Write([]byte(`{"error":"` + ErrInternal.Error() + `"}`))
+	switch err {
+	case book.ErrNotFound:
+		w.WriteHeader(http.StatusNotFound)
+	default:
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error":"` + ErrInternal.Error() + `"}`))
+		return
+	}
+
+	w.Write([]byte(`{"error":"` + err.Error() + `"}`))
 }

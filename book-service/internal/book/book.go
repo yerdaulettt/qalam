@@ -1,30 +1,46 @@
 package book
 
-import "encoding/json"
+import (
+	"context"
+)
 
-type Genre struct {
-	Id   int    `json:"genre_id"`
-	Name string `json:"genre_name"`
+type BookRepository interface {
+	GetBooks(ctx context.Context) ([]Book, error)
+	GetBook(ctx context.Context, bookId int) (*BookDetails, error)
+	GetGenres(ctx context.Context) ([]GenreDetails, error)
 }
 
-type GenreSlice []Genre
+type BookService struct {
+	repo BookRepository
+}
 
-func (g *GenreSlice) Scan(src any) error {
-	var data []byte
+func NewBookService(r BookRepository) *BookService {
+	return &BookService{repo: r}
+}
 
-	switch v := src.(type) {
-	case []byte:
-		data = v
+func (s *BookService) GetBooks(ctx context.Context) ([]Book, error) {
+	books, err := s.repo.GetBooks(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	return json.Unmarshal(data, g)
+	return books, nil
 }
 
-type Book struct {
-	Id            int     `json:"id"`
-	Name          string  `json:"name"`
-	AuthorId      int     `json:"author_id"`
-	AuthorName    string  `json:"author_name"`
-	AuthorSurname string  `json:"author_surname"`
-	Genres        []Genre `json:"genres"`
+func (s *BookService) GetBook(ctx context.Context, bookId int) (*BookDetails, error) {
+	b, err := s.repo.GetBook(ctx, bookId)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
+
+func (s *BookService) GetGenres(ctx context.Context) ([]GenreDetails, error) {
+	g, err := s.repo.GetGenres(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return g, nil
 }
