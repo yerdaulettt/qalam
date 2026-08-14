@@ -95,3 +95,89 @@ func (h *adminHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (h *adminHandler) UpdateBook(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	bookId, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	var newBook book.BookUpdate
+
+	err = json.NewDecoder(r.Body).Decode(&newBook)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	newBook.Id = bookId
+
+	b, err := h.service.UpdateBook(r.Context(), &newBook)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(&b)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+}
+
+func (h *adminHandler) AddAuthor(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var newAuthor book.NewAuthor
+
+	err := json.NewDecoder(r.Body).Decode(&newAuthor)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	author, err := h.service.AddAuthor(r.Context(), &newAuthor)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(&author)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+}
+
+func (h *adminHandler) UpdateAuthor(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	authorId, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	var newAuthor book.NewAuthor
+
+	err = json.NewDecoder(r.Body).Decode(&newAuthor)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	a, err := h.service.UpdateAuthor(r.Context(), authorId, &newAuthor)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(&a)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+}

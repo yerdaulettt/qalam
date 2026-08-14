@@ -34,6 +34,13 @@ type Book struct {
 	Genres        []Genre `json:"genres"`
 }
 
+type BookUpdate struct {
+	Id          int    `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	AuthorId    int    `json:"author_id"`
+}
+
 type BookDetails struct {
 	Id            int     `json:"id"`
 	Name          string  `json:"name"`
@@ -45,9 +52,14 @@ type BookDetails struct {
 }
 
 type Author struct {
-	Id         int    `json:"id"`
-	Name       string `json:"name"`
-	Surname    string `json:"surname"`
-	About      string `json:"about"`
-	TotalBooks int    `json:"total_books"`
+	Id      int    `json:"id"`
+	Name    string `json:"name"`
+	Surname string `json:"surname"`
+	About   string `json:"about"`
+}
+
+type NewAuthor struct {
+	Name    string `json:"name"`
+	Surname string `json:"surname"`
+	About   string `json:"about"`
 }

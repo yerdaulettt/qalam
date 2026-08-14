@@ -28,6 +28,9 @@ func NewAdminRouter(s *book.AdminService) http.Handler {
 	r.HandleFunc("POST /genres", adminH.NewGenre)
 	r.HandleFunc("PATCH /genres/{id}", adminH.UpdateGenre)
 	r.HandleFunc("DELETE /genres/{id}", adminH.DeleteGenre)
+	r.HandleFunc("PATCH /books/{id}", adminH.UpdateBook)
+	r.HandleFunc("POST /authors", adminH.AddAuthor)
+	r.HandleFunc("PATCH /authors/{id}", adminH.UpdateAuthor)
 
 	return r
 }
