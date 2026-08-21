@@ -9,6 +9,7 @@ import (
 	"book-service/internal/configs"
 	"book-service/internal/httphandler"
 	"book-service/internal/postgres"
+	"book-service/internal/rabbitmq"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
@@ -32,6 +33,13 @@ func main() {
 	}
 	defer db.Close()
 
+	mq, err := rabbitmq.NewPublisherConn(ctx, "amqp://guest:guest@localhost:5673/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer mq.Close(ctx)
+	adminP := rabbitmq.NewAdminPublisher(mq)
+
 	r := chi.NewRouter()
 
 	r.Use(httphandler.LogMiddleware)
@@ -41,7 +49,7 @@ func main() {
 	bookRouter := httphandler.NewBookRouter(bookS)
 
 	adminR := postgres.NewAdminRepo(db)
-	adminS := book.NewAdminService(adminR)
+	adminS := book.NewAdminService(adminR, adminP)
 	adminRouter := httphandler.NewAdminRouter(adminS)
 
 	r.Mount("/api", bookRouter)

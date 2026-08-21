@@ -9,16 +9,22 @@ type adminRepository interface {
 	UpdateGenre(ctx context.Context, genreId int, name string) (Genre, error)
 	DeleteGenre(ctx context.Context, genreId int) (Genre, error)
 	UpdateBook(ctx context.Context, newBook *BookUpdate) (*BookUpdate, error)
+	DeleteBook(ctx context.Context, bookId int) error
 	AddAuthor(ctx context.Context, newAuthor *NewAuthor) (*Author, error)
 	UpdateAuthor(ctx context.Context, authorId int, newAuthor *NewAuthor) (*Author, error)
 }
 
-type AdminService struct {
-	repo adminRepository
+type adminPublisher interface {
+	Publish(ctx context.Context, m Message) error
 }
 
-func NewAdminService(r adminRepository) *AdminService {
-	return &AdminService{repo: r}
+type AdminService struct {
+	repo      adminRepository
+	publisher adminPublisher
+}
+
+func NewAdminService(r adminRepository, p adminPublisher) *AdminService {
+	return &AdminService{repo: r, publisher: p}
 }
 
 func (s *AdminService) NewGenre(ctx context.Context, name string) (Genre, error) {
@@ -55,6 +61,20 @@ func (s *AdminService) UpdateBook(ctx context.Context, newBook *BookUpdate) (*Bo
 	}
 
 	return b, nil
+}
+
+func (s *AdminService) DeleteBook(ctx context.Context, bookId int) error {
+	err := s.repo.DeleteBook(ctx, bookId)
+	if err != nil {
+		return err
+	}
+
+	err = s.publisher.Publish(ctx, Message{Id: bookId, Name: "book deleted"})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *AdminService) AddAuthor(ctx context.Context, newAuthor *NewAuthor) (*Author, error) {

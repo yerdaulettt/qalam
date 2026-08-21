@@ -93,6 +93,19 @@ func (r *adminRepo) UpdateBook(ctx context.Context, newBook *book.BookUpdate) (*
 	return &b, nil
 }
 
+func (r *adminRepo) DeleteBook(ctx context.Context, bookId int) error {
+	res, err := r.db.Exec(ctx, "delete from books where id = $1", bookId)
+	if err != nil {
+		return err
+	}
+
+	if res.RowsAffected() == 0 {
+		return book.ErrNotFound
+	}
+
+	return nil
+}
+
 func (r *adminRepo) AddAuthor(ctx context.Context, newAuthor *book.NewAuthor) (*book.Author, error) {
 	query := "insert into authors (name, surname, about) values ($1, $2, $3) returning id, name, surname, about"
 

@@ -63,3 +63,8 @@ type NewAuthor struct {
 	Surname string `json:"surname"`
 	About   string `json:"about"`
 }
+
+type Message struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+}

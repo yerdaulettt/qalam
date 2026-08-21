@@ -128,6 +128,24 @@ func (h *adminHandler) UpdateBook(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *adminHandler) DeleteBook(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	bookId, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	err = h.service.DeleteBook(r.Context(), bookId)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	w.Write([]byte(`{"message":"ok"}`))
+}
+
 func (h *adminHandler) AddAuthor(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
