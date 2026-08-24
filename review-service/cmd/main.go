@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"review-service/internal/configs"
+	"review-service/internal/httphandler"
 	"review-service/internal/postgres"
 	"review-service/internal/rabbitmq"
 	"review-service/internal/review"
@@ -41,10 +42,17 @@ func main() {
 	reviewR := postgres.NewReviewRepo(db)
 	reviewS := review.NewReviewService(reviewR)
 
+	jwtAuth, err := configs.NewJwtAuth()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	rConsumer := rabbitmq.NewReviewConsumer(mq, reviewS)
 	go rConsumer.DeleteBookId(ctx)
 
 	r := chi.NewRouter()
+
+	r.Mount("/api", httphandler.NewReviewRouter(reviewS, jwtAuth))
 
 	log.Fatal(http.ListenAndServe(":8082", r))
 }
