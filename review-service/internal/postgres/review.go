@@ -19,9 +19,9 @@ func NewReviewRepo(db *pgxpool.Pool) *reviewRepo {
 	return &reviewRepo{db: db}
 }
 
-func (r *reviewRepo) GetReviews(ctx context.Context, bookId int) ([]review.Review, error) {
-	query := `select id, content, user_id, book_id from reviews where book_id = $1`
-	var reviews []review.Review
+func (r *reviewRepo) GetReviews(ctx context.Context, bookId int) ([]review.ReviewDetail, error) {
+	query := `select r.id, r.content, u.username, r.book_id from reviews as r join users as u on r.user_id = u.id where r.book_id = $1`
+	var reviews []review.ReviewDetail
 
 	rows, err := r.db.Query(ctx, query, bookId)
 	if err != nil {
@@ -30,8 +30,58 @@ func (r *reviewRepo) GetReviews(ctx context.Context, bookId int) ([]review.Revie
 	defer rows.Close()
 
 	for rows.Next() {
-		var rev review.Review
-		if err := rows.Scan(&rev.Id, &rev.Content, &rev.UserId, &rev.BookId); err != nil {
+		var rev review.ReviewDetail
+		if err := rows.Scan(&rev.Id, &rev.Content, &rev.Username, &rev.BookId); err != nil {
+			return nil, err
+		}
+
+		reviews = append(reviews, rev)
+	}
+
+	return reviews, nil
+}
+
+func (r *reviewRepo) GetMyReviews(ctx context.Context, userId int) ([]review.UserReview, error) {
+	query := `
+	select r.id, r.content, b.name, b.id from reviews as r join books as b on r.book_id = b.id
+	join users as u on r.user_id = u.id where u.id = $1
+	`
+
+	var reviews []review.UserReview
+	rows, err := r.db.Query(ctx, query, userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var rev review.UserReview
+		if err := rows.Scan(&rev.Id, &rev.Content, &rev.BookName, &rev.BookId); err != nil {
+			return nil, err
+		}
+
+		reviews = append(reviews, rev)
+	}
+
+	return reviews, nil
+}
+
+func (r *reviewRepo) GetUserReviews(ctx context.Context, username string) ([]review.UserReview, error) {
+	query := `
+	select r.id, r.content, b.name, b.id from reviews as r join books as b on r.book_id = b.id
+	join users as u on r.user_id = u.id where u.username = $1
+	`
+
+	var reviews []review.UserReview
+	rows, err := r.db.Query(ctx, query, username)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var rev review.UserReview
+		if err := rows.Scan(&rev.Id, &rev.Content, &rev.BookName, &rev.BookId); err != nil {
 			return nil, err
 		}
 
@@ -107,7 +157,7 @@ func (r *reviewRepo) DeleteReview(ctx context.Context, reviewId, userId int) (re
 }
 
 func (r *reviewRepo) DeleteBookId(ctx context.Context, bookId int) error {
-	res, err := r.db.Exec(ctx, "delete from books_id where id = $1", bookId)
+	res, err := r.db.Exec(ctx, "delete from books where id = $1", bookId)
 	if err != nil {
 		return err
 	}

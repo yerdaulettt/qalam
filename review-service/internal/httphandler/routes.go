@@ -16,6 +16,8 @@ func NewReviewRouter(service *review.ReviewService, jwtAuth *configs.JwtAuth) ht
 
 	r.Use(JwtMiddleware(jwtAuth))
 
+	r.HandleFunc("GET /my/reviews", reviewH.GetMyReviews)
+	r.HandleFunc("GET /users/{username}/reviews", reviewH.GetUserReviews)
 	r.HandleFunc("GET /books/{id}/reviews", reviewH.GetReviews)
 	r.HandleFunc("POST /books/{id}/reviews", reviewH.AddReview)
 	r.HandleFunc("PATCH /reviews/{id}", reviewH.UpdateReview)

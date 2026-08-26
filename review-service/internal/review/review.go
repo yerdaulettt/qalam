@@ -3,7 +3,9 @@ package review
 import "context"
 
 type reviewRepository interface {
-	GetReviews(ctx context.Context, bookId int) ([]Review, error)
+	GetReviews(ctx context.Context, bookId int) ([]ReviewDetail, error)
+	GetMyReviews(ctx context.Context, userId int) ([]UserReview, error)
+	GetUserReviews(ctx context.Context, username string) ([]UserReview, error)
 	AddReview(ctx context.Context, newReview ReviewReq) (Review, error)
 	GetUserId(ctx context.Context, reviewId int) (int, error)
 	UpdateReview(ctx context.Context, newReview ReviewUpdate) (Review, error)
@@ -19,8 +21,26 @@ func NewReviewService(r reviewRepository) *ReviewService {
 	return &ReviewService{repo: r}
 }
 
-func (s *ReviewService) GetReviews(ctx context.Context, bookId int) ([]Review, error) {
+func (s *ReviewService) GetReviews(ctx context.Context, bookId int) ([]ReviewDetail, error) {
 	r, err := s.repo.GetReviews(ctx, bookId)
+	if err != nil {
+		return nil, err
+	}
+
+	return r, nil
+}
+
+func (s *ReviewService) GetMyReviews(ctx context.Context, userId int) ([]UserReview, error) {
+	r, err := s.repo.GetMyReviews(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return r, nil
+}
+
+func (s *ReviewService) GetUserReviews(ctx context.Context, username string) ([]UserReview, error) {
+	r, err := s.repo.GetUserReviews(ctx, username)
 	if err != nil {
 		return nil, err
 	}

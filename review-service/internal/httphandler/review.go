@@ -37,6 +37,44 @@ func (h *reviewHandler) GetReviews(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *reviewHandler) GetUserReviews(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	username := r.PathValue("username")
+
+	reviews, err := h.service.GetUserReviews(r.Context(), username)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(reviews)
+	if err != nil {
+		errorResponse(w, err)
+	}
+}
+
+func (h *reviewHandler) GetMyReviews(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		errorResponse(w, ErrUserId)
+		return
+	}
+
+	reviews, err := h.service.GetMyReviews(r.Context(), userId)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(reviews)
+	if err != nil {
+		errorResponse(w, err)
+	}
+}
+
 func (h *reviewHandler) AddReview(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
