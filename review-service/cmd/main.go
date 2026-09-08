@@ -33,7 +33,7 @@ func main() {
 	}
 	defer db.Close()
 
-	mq, err := rabbitmq.NewConsumerConn(ctx, "amqp://guest:guest@localhost:5673/")
+	mq, err := rabbitmq.NewConn(ctx, configs.NewRabbitUrl())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,7 +47,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	rConsumer := rabbitmq.NewReviewConsumer(mq, reviewS)
+	consume, err := mq.NewConsumer(ctx, "book.deleted")
+	if err != nil {
+		log.Fatal(err)
+	}
+	rConsumer := rabbitmq.NewReviewConsumer(consume, reviewS)
 	go rConsumer.DeleteBookId(ctx)
 
 	r := chi.NewRouter()

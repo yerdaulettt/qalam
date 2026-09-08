@@ -39,11 +39,9 @@ func (c *reviewConsumer) DeleteBookId(ctx context.Context) error {
 			log.Println(err)
 		}
 
-		if m.Name == "book deleted" {
-			err = c.service.DeleteBookId(ctx, m.Id)
-			if err != nil {
-				log.Println(err)
-			}
+		err = c.service.DeleteBookId(ctx, m.BookId)
+		if err != nil {
+			log.Println(err)
 		}
 	}
 }

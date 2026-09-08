@@ -33,12 +33,19 @@ func main() {
 	}
 	defer db.Close()
 
-	mq, err := rabbitmq.NewPublisherConn(ctx, "amqp://guest:guest@localhost:5673/")
+	mq, err := rabbitmq.NewConn(ctx, configs.NewRabbitUrl())
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer mq.Close(ctx)
-	adminP := rabbitmq.NewAdminPublisher(mq)
+
+	p, err := mq.NewPublisher(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer p.Close(ctx)
+
+	adminP := rabbitmq.NewAdminPublisher(p, mq.Management)
 
 	r := chi.NewRouter()
 

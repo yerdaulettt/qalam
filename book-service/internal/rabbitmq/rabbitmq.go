@@ -6,22 +6,45 @@ import (
 	"github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
 
-func NewPublisherConn(ctx context.Context, mqUrl string) (*rabbitmqamqp.Publisher, error) {
+type rabbitConn struct {
+	env        *rabbitmqamqp.Environment
+	conn       *rabbitmqamqp.AmqpConnection
+	Management *rabbitmqamqp.AmqpManagement
+}
+
+func NewConn(ctx context.Context, mqUrl string) (*rabbitConn, error) {
 	env := rabbitmqamqp.NewEnvironment(mqUrl, nil)
-	mq, err := env.NewConnection(ctx)
+	conn, err := env.NewConnection(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = mq.Management().DeclareQueue(ctx, &rabbitmqamqp.QuorumQueueSpecification{Name: "book"})
+	return &rabbitConn{
+		env:        env,
+		conn:       conn,
+		Management: conn.Management(),
+	}, nil
+}
+
+func (r *rabbitConn) NewPublisher(ctx context.Context) (*rabbitmqamqp.Publisher, error) {
+	p, err := r.conn.NewPublisher(ctx, nil, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	publisher, err := mq.NewPublisher(ctx, &rabbitmqamqp.QueueAddress{Queue: "book"}, nil)
+	return p, nil
+}
+
+func (r *rabbitConn) Close(ctx context.Context) error {
+	err := r.env.CloseConnections(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return publisher, nil
+	err = r.conn.Close(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

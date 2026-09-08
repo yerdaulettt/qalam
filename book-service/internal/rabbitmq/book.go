@@ -2,30 +2,33 @@ package rabbitmq
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"log"
-
-	"book-service/internal/book"
 
 	"github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
 
 type adminPublisher struct {
-	publisher *rabbitmqamqp.Publisher
+	publisher  *rabbitmqamqp.Publisher
+	management *rabbitmqamqp.AmqpManagement
 }
 
-func NewAdminPublisher(p *rabbitmqamqp.Publisher) *adminPublisher {
-	return &adminPublisher{publisher: p}
+func NewAdminPublisher(p *rabbitmqamqp.Publisher, m *rabbitmqamqp.AmqpManagement) *adminPublisher {
+	return &adminPublisher{publisher: p, management: m}
 }
 
-func (p *adminPublisher) Publish(ctx context.Context, m book.Message) error {
-	data, err := json.Marshal(m)
+func (p *adminPublisher) Publish(ctx context.Context, message []byte, queue string) error {
+	_, err := p.management.DeclareQueue(ctx, &rabbitmqamqp.QuorumQueueSpecification{Name: queue})
 	if err != nil {
 		return err
 	}
 
-	res, err := p.publisher.Publish(ctx, rabbitmqamqp.NewMessage(data))
+	msg, err := rabbitmqamqp.NewMessageWithAddress(message, &rabbitmqamqp.QueueAddress{Queue: queue})
+	if err != nil {
+		return err
+	}
+
+	res, err := p.publisher.Publish(ctx, msg)
 	if err != nil {
 		return err
 	}

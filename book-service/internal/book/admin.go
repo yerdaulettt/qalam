@@ -2,6 +2,7 @@ package book
 
 import (
 	"context"
+	"encoding/json"
 )
 
 type adminRepository interface {
@@ -15,7 +16,7 @@ type adminRepository interface {
 }
 
 type adminPublisher interface {
-	Publish(ctx context.Context, m Message) error
+	Publish(ctx context.Context, message []byte, queue string) error
 }
 
 type AdminService struct {
@@ -69,7 +70,12 @@ func (s *AdminService) DeleteBook(ctx context.Context, bookId int) error {
 		return err
 	}
 
-	err = s.publisher.Publish(ctx, Message{Id: bookId, Name: "book deleted"})
+	message, err := json.Marshal(BookDeletedMessage{BookId: bookId})
+	if err != nil {
+		return err
+	}
+
+	err = s.publisher.Publish(ctx, message, "book.deleted")
 	if err != nil {
 		return err
 	}

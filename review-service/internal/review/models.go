@@ -34,6 +34,5 @@ type ReviewUpdate struct {
 }
 
 type Message struct {
-	Id   int    `json:"id"`
-	Name string `json:"name"`
+	BookId int `json:"book_id"`
 }
