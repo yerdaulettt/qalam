@@ -17,13 +17,8 @@ func NewAdminPublisher(p *rabbitmqamqp.Publisher, m *rabbitmqamqp.AmqpManagement
 	return &adminPublisher{publisher: p, management: m}
 }
 
-func (p *adminPublisher) Publish(ctx context.Context, message []byte, queue string) error {
-	_, err := p.management.DeclareQueue(ctx, &rabbitmqamqp.QuorumQueueSpecification{Name: queue})
-	if err != nil {
-		return err
-	}
-
-	msg, err := rabbitmqamqp.NewMessageWithAddress(message, &rabbitmqamqp.QueueAddress{Queue: queue})
+func (p *adminPublisher) Publish(ctx context.Context, message []byte, routeKey string) error {
+	msg, err := rabbitmqamqp.NewMessageWithAddress(message, &rabbitmqamqp.ExchangeAddress{Exchange: "events", Key: routeKey})
 	if err != nil {
 		return err
 	}

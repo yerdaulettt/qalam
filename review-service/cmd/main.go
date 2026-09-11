@@ -47,7 +47,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	consume, err := mq.NewConsumer(ctx, "book.deleted")
+	consume, err := mq.NewConsumer(ctx, "book.*", "books")
 	if err != nil {
 		log.Fatal(err)
 	}

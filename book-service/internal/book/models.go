@@ -67,3 +67,8 @@ type NewAuthor struct {
 type BookDeletedMessage struct {
 	BookId int `json:"book_id"`
 }
+
+type BookMessage struct {
+	BookId int    `json:"book_id"`
+	Name   string `json:"name"`
+}

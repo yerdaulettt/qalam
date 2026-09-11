@@ -38,8 +38,22 @@ func (r *rabbitConn) Close(ctx context.Context) error {
 	return nil
 }
 
-func (r *rabbitConn) NewConsumer(ctx context.Context, queue string) (*rabbitmqamqp.Consumer, error) {
-	_, err := r.conn.Management().DeclareQueue(ctx, &rabbitmqamqp.QuorumQueueSpecification{Name: queue})
+func (r *rabbitConn) NewConsumer(ctx context.Context, bindKey, queue string) (*rabbitmqamqp.Consumer, error) {
+	topic, err := r.conn.Management().DeclareExchange(ctx, &rabbitmqamqp.TopicExchangeSpecification{Name: "events"})
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = r.conn.Management().DeclareQueue(ctx, &rabbitmqamqp.QuorumQueueSpecification{Name: queue})
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = r.conn.Management().Bind(ctx, &rabbitmqamqp.ExchangeToQueueBindingSpecification{
+		SourceExchange:   topic.Name(),
+		DestinationQueue: queue,
+		BindingKey:       bindKey,
+	})
 	if err != nil {
 		return nil, err
 	}

@@ -36,3 +36,8 @@ type ReviewUpdate struct {
 type Message struct {
 	BookId int `json:"book_id"`
 }
+
+type BookMessage struct {
+	BookId int    `json:"book_id"`
+	Name   string `json:"name"`
+}

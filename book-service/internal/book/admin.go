@@ -16,7 +16,7 @@ type adminRepository interface {
 }
 
 type adminPublisher interface {
-	Publish(ctx context.Context, message []byte, queue string) error
+	Publish(ctx context.Context, message []byte, routeKey string) error
 }
 
 type AdminService struct {
@@ -57,6 +57,16 @@ func (s *AdminService) DeleteGenre(ctx context.Context, genreId int) (Genre, err
 
 func (s *AdminService) UpdateBook(ctx context.Context, newBook *BookUpdate) (*BookUpdate, error) {
 	b, err := s.repo.UpdateBook(ctx, newBook)
+	if err != nil {
+		return nil, err
+	}
+
+	message, err := json.Marshal(BookMessage{BookId: b.Id, Name: b.Name})
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.publisher.Publish(ctx, message, "book.updated")
 	if err != nil {
 		return nil, err
 	}

@@ -11,6 +11,7 @@ type reviewRepository interface {
 	UpdateReview(ctx context.Context, newReview ReviewUpdate) (Review, error)
 	DeleteReview(ctx context.Context, reviewId, userId int) (Review, error)
 	DeleteBookId(ctx context.Context, bookId int) error
+	UpdateBook(ctx context.Context, bookId int, name string) error
 }
 
 type ReviewService struct {
@@ -99,6 +100,14 @@ func (s *ReviewService) DeleteReview(ctx context.Context, reviewId, userId int) 
 
 func (s *ReviewService) DeleteBookId(ctx context.Context, bookId int) error {
 	if err := s.repo.DeleteBookId(ctx, bookId); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *ReviewService) UpdateBook(ctx context.Context, bookId int, name string) error {
+	if err := s.repo.UpdateBook(ctx, bookId, name); err != nil {
 		return err
 	}
 

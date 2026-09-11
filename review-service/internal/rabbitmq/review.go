@@ -26,20 +26,38 @@ func (c *reviewConsumer) DeleteBookId(ctx context.Context) error {
 			log.Println(err)
 		}
 
-		var m review.Message
+		message := receive.Message()
 
-		err = json.Unmarshal(receive.Message().GetData(), &m)
-		if err != nil {
-			log.Println(err)
-			continue
+		switch message.Annotations["x-routing-key"] {
+		case "book.deleted":
+			var m review.Message
+
+			err = json.Unmarshal(message.GetData(), &m)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			err = c.service.DeleteBookId(ctx, m.BookId)
+			if err != nil {
+				log.Println(err)
+			}
+		case "book.updated":
+			var bm review.BookMessage
+
+			err = json.Unmarshal(message.GetData(), &bm)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			err = c.service.UpdateBook(ctx, bm.BookId, bm.Name)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 
 		err = receive.Accept(ctx)
-		if err != nil {
-			log.Println(err)
-		}
-
-		err = c.service.DeleteBookId(ctx, m.BookId)
 		if err != nil {
 			log.Println(err)
 		}

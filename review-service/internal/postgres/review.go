@@ -168,3 +168,16 @@ func (r *reviewRepo) DeleteBookId(ctx context.Context, bookId int) error {
 
 	return nil
 }
+
+func (r *reviewRepo) UpdateBook(ctx context.Context, bookId int, name string) error {
+	res, err := r.db.Exec(ctx, "update books set name = $1 where id = $2", name, bookId)
+	if err != nil {
+		return err
+	}
+
+	if res.RowsAffected() == 0 {
+		return review.ErrNotFound
+	}
+
+	return nil
+}

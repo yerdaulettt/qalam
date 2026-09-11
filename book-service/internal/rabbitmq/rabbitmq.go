@@ -27,6 +27,11 @@ func NewConn(ctx context.Context, mqUrl string) (*rabbitConn, error) {
 }
 
 func (r *rabbitConn) NewPublisher(ctx context.Context) (*rabbitmqamqp.Publisher, error) {
+	_, err := r.Management.DeclareExchange(ctx, &rabbitmqamqp.TopicExchangeSpecification{Name: "events"})
+	if err != nil {
+		return nil, err
+	}
+
 	p, err := r.conn.NewPublisher(ctx, nil, nil)
 	if err != nil {
 		return nil, err
