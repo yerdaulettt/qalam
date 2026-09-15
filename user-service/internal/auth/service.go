@@ -2,12 +2,19 @@ package auth
 
 import "context"
 
-type AuthService struct {
-	repo      AuthRepository
-	jwtHelper *jwtAuth
+type AuthRepository interface {
+	GetUser(ctx context.Context, username string) (UserVerify, error)
+	GetUsername(ctx context.Context, username string) (string, error)
+	Register(ctx context.Context, u RegisterReq) (User, error)
+	GetMyProfile(ctx context.Context, userId int) (User, error)
 }
 
-func NewAuthService(r AuthRepository, j *jwtAuth) *AuthService {
+type AuthService struct {
+	repo      AuthRepository
+	jwtHelper *JwtAuth
+}
+
+func NewAuthService(r AuthRepository, j *JwtAuth) *AuthService {
 	return &AuthService{repo: r, jwtHelper: j}
 }
 
@@ -74,4 +81,13 @@ func (s *AuthService) TokenRefresh(ctx context.Context, refresh string) (string,
 	}
 
 	return access, nil
+}
+
+func (s *AuthService) GetMyProfile(ctx context.Context, userId int) (User, error) {
+	u, err := s.repo.GetMyProfile(ctx, userId)
+	if err != nil {
+		return User{}, err
+	}
+
+	return u, nil
 }

@@ -43,7 +43,10 @@ func main() {
 	authS := auth.NewAuthService(authR, jwtAuth)
 	authRouter := httphandler.NewAuthRouter(authS)
 
+	profileRouter := httphandler.NewProfileRouter(authS, jwtAuth)
+
 	r.Handle("/auth/", http.StripPrefix("/auth", authRouter))
+	r.Handle("/api/", http.StripPrefix("/api", profileRouter))
 
 	log.Fatal(http.ListenAndServe(":8080", httphandler.LogMiddleware(r)))
 }

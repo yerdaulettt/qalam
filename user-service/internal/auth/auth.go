@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"errors"
 )
 
@@ -44,9 +43,3 @@ var (
 	ErrShortPassword     = errors.New("Minimum password len is 8")
 	ErrIncorrectPassword = errors.New("Incorrect password")
 )
-
-type AuthRepository interface {
-	GetUser(ctx context.Context, username string) (UserVerify, error)
-	GetUsername(ctx context.Context, username string) (string, error)
-	Register(ctx context.Context, u RegisterReq) (User, error)
-}

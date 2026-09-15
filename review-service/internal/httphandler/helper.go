@@ -13,6 +13,7 @@ var (
 	ErrNumber   = errors.New("Incorrect number")
 	ErrUserId   = errors.New("Incorrect user id")
 	ErrNoToken  = errors.New("No token")
+	errRole     = errors.New("Incorrect role")
 )
 
 func errorResponse(w http.ResponseWriter, err error) {

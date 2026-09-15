@@ -9,7 +9,11 @@ import (
 )
 
 var (
-	ErrJson = errors.New("Incorrect json")
+	errJson    = errors.New("Incorrect json")
+	errUserId  = errors.New("Incorrect user id")
+	errRole    = errors.New("Incorrect role")
+	errNoToken = errors.New("No token")
+	errToken   = errors.New("Incorrect token")
 )
 
 func errorResponse(w http.ResponseWriter, err error) {
@@ -20,10 +24,12 @@ func errorResponse(w http.ResponseWriter, err error) {
 	switch err {
 	case auth.ErrNotFound:
 		w.WriteHeader(http.StatusNotFound)
-	case ErrJson, auth.ErrEmptyFields, auth.ErrShortPassword, auth.ErrIncorrectPassword, auth.ErrIncorrectToken:
+	case errJson, errToken, errUserId, auth.ErrEmptyFields, auth.ErrShortPassword, auth.ErrIncorrectPassword, auth.ErrIncorrectToken:
 		w.WriteHeader(http.StatusBadRequest)
 	case auth.ErrUsername:
 		w.WriteHeader(http.StatusConflict)
+	case errRole:
+		w.WriteHeader(http.StatusUnauthorized)
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"error":"Internal error"}`))

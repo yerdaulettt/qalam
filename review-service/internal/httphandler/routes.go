@@ -25,3 +25,16 @@ func NewReviewRouter(service *review.ReviewService, jwtAuth *configs.JwtAuth) ht
 
 	return r
 }
+
+func NewAdminRouter(service *review.AdminService, jwtAuth *configs.JwtAuth) http.Handler {
+	r := chi.NewRouter()
+
+	r.Use(JwtMiddleware(jwtAuth))
+	r.Use(RoleMiddleware("admin"))
+
+	adminH := newAdminHandler(service)
+	r.HandleFunc("GET /reviews", adminH.GetAllReviews)
+	r.HandleFunc("DELETE /reviews/{id}", adminH.DeleteReview)
+
+	return r
+}

@@ -42,6 +42,9 @@ func main() {
 	reviewR := postgres.NewReviewRepo(db)
 	reviewS := review.NewReviewService(reviewR)
 
+	adminR := postgres.NewAdminRepo(db)
+	adminS := review.NewAdminService(adminR)
+
 	jwtAuth, err := configs.NewJwtAuth()
 	if err != nil {
 		log.Fatal(err)
@@ -57,6 +60,7 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Mount("/api", httphandler.NewReviewRouter(reviewS, jwtAuth))
+	r.Mount("/admin", httphandler.NewAdminRouter(adminS, jwtAuth))
 
 	log.Fatal(http.ListenAndServe(":8082", r))
 }

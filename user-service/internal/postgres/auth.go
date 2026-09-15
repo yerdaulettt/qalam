@@ -48,6 +48,22 @@ func (r *authRepo) GetUser(ctx context.Context, username string) (auth.UserVerif
 	return user, nil
 }
 
+func (r *authRepo) GetMyProfile(ctx context.Context, userId int) (auth.User, error) {
+	query := "select id, name, username, role from users where id = $1"
+	var u auth.User
+
+	err := r.db.QueryRow(ctx, query, userId).Scan(&u.Id, &u.Name, &u.Username, &u.Role)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return auth.User{}, auth.ErrNotFound
+		}
+
+		return auth.User{}, err
+	}
+
+	return u, nil
+}
+
 func (r *authRepo) Register(ctx context.Context, u auth.RegisterReq) (auth.User, error) {
 	query := "insert into users (name, username, role, hash) values ($1, $2, $3, $4) returning id, name, username, role"
 	var user auth.User

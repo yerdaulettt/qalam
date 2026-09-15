@@ -64,6 +64,28 @@ func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *authHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		errorResponse(w, errUserId)
+		return
+	}
+
+	user, err := h.service.GetMyProfile(r.Context(), userId)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(&user)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+}
+
 func (h *authHandler) TokenRefresh(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

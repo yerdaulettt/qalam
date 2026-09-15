@@ -14,21 +14,21 @@ type claims struct {
 	Type   string
 }
 
-type jwtAuth struct {
+type JwtAuth struct {
 	secret     []byte
 	accessTtl  time.Duration
 	refreshTtl time.Duration
 }
 
-func NewJwtAuth(s []byte, aTtl, rTtl time.Duration) *jwtAuth {
-	return &jwtAuth{
+func NewJwtAuth(s []byte, aTtl, rTtl time.Duration) *JwtAuth {
+	return &JwtAuth{
 		secret:     s,
 		accessTtl:  aTtl,
 		refreshTtl: rTtl,
 	}
 }
 
-func (j *jwtAuth) ParseToken(tokenString string) (*claims, error) {
+func (j *JwtAuth) ParseToken(tokenString string) (*claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &claims{}, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrIncorrectToken
@@ -53,7 +53,7 @@ func (j *jwtAuth) ParseToken(tokenString string) (*claims, error) {
 	return tokenClaims, nil
 }
 
-func (j *jwtAuth) newAccessToken(userId int, role string) (string, error) {
+func (j *JwtAuth) newAccessToken(userId int, role string) (string, error) {
 	now := time.Now()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims{
@@ -74,7 +74,7 @@ func (j *jwtAuth) newAccessToken(userId int, role string) (string, error) {
 	return tokenString, nil
 }
 
-func (j *jwtAuth) newRefreshToken(userId int, role string) (string, error) {
+func (j *JwtAuth) newRefreshToken(userId int, role string) (string, error) {
 	now := time.Now()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims{
@@ -95,7 +95,7 @@ func (j *jwtAuth) newRefreshToken(userId int, role string) (string, error) {
 	return tokenString, nil
 }
 
-func (j *jwtAuth) newTokens(userId int, role string) (JwtTokens, error) {
+func (j *JwtAuth) newTokens(userId int, role string) (JwtTokens, error) {
 	access, err := j.newAccessToken(userId, role)
 	if err != nil {
 		return JwtTokens{}, err
@@ -112,7 +112,7 @@ func (j *jwtAuth) newTokens(userId int, role string) (JwtTokens, error) {
 	}, nil
 }
 
-func (j *jwtAuth) refreshAccess(refresh string) (string, error) {
+func (j *JwtAuth) refreshAccess(refresh string) (string, error) {
 	claims, err := j.ParseToken(refresh)
 	if err != nil {
 		return "", err
