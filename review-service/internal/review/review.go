@@ -7,6 +7,7 @@ type reviewRepository interface {
 	GetMyReviews(ctx context.Context, userId int) ([]UserReview, error)
 	GetUserReviews(ctx context.Context, username string) ([]UserReview, error)
 	AddReview(ctx context.Context, newReview ReviewReq) (Review, error)
+	ReviewLike(ctx context.Context, reviewId, userId int, liked bool) error
 	GetUserId(ctx context.Context, reviewId int) (int, error)
 	UpdateReview(ctx context.Context, newReview ReviewUpdate) (Review, error)
 	DeleteReview(ctx context.Context, reviewId, userId int) (Review, error)
@@ -60,6 +61,15 @@ func (s *ReviewService) AddReview(ctx context.Context, newReview ReviewReq) (Rev
 	}
 
 	return r, nil
+}
+
+func (s *ReviewService) ReviewLike(ctx context.Context, reviewId, userId int, liked bool) error {
+	err := s.repo.ReviewLike(ctx, reviewId, userId, liked)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *ReviewService) UpdateReview(ctx context.Context, newReview ReviewUpdate) (Review, error) {

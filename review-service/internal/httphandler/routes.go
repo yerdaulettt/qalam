@@ -20,6 +20,7 @@ func NewReviewRouter(service *review.ReviewService, jwtAuth *configs.JwtAuth) ht
 	r.HandleFunc("GET /users/{username}/reviews", reviewH.GetUserReviews)
 	r.HandleFunc("GET /books/{id}/reviews", reviewH.GetReviews)
 	r.HandleFunc("POST /books/{id}/reviews", reviewH.AddReview)
+	r.HandleFunc("PUT /reviews/{id}/likes", reviewH.ReviewLike)
 	r.HandleFunc("PATCH /reviews/{id}", reviewH.UpdateReview)
 	r.HandleFunc("DELETE /reviews/{id}", reviewH.DeleteReview)
 

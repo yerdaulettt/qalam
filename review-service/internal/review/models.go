@@ -21,6 +21,7 @@ type ReviewDetail struct {
 	Content  string `json:"content"`
 	Username string `json:"username"`
 	BookId   int    `json:"book_id"`
+	Likes    int    `json:"likes"`
 }
 
 type UserReview struct {
@@ -28,6 +29,7 @@ type UserReview struct {
 	Content  string `json:"content"`
 	BookName string `json:"book_name"`
 	BookId   int    `json:"book_id"`
+	Likes    int    `json:"likes"`
 }
 
 type ReviewReq struct {

@@ -113,6 +113,35 @@ func (h *reviewHandler) AddReview(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *reviewHandler) ReviewLike(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	reviewId, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		errorResponse(w, ErrNumber)
+		return
+	}
+
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		errorResponse(w, ErrUserId)
+		return
+	}
+
+	liked, err := strconv.ParseBool(r.URL.Query().Get("liked"))
+	if err != nil {
+		liked = true
+	}
+
+	err = h.service.ReviewLike(r.Context(), reviewId, userId, liked)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	w.Write([]byte(`{"message": "ok"}`))
+}
+
 func (h *reviewHandler) UpdateReview(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

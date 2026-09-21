@@ -20,7 +20,10 @@ func NewReviewRepo(db *pgxpool.Pool) *reviewRepo {
 }
 
 func (r *reviewRepo) GetReviews(ctx context.Context, bookId int) ([]review.ReviewDetail, error) {
-	query := `select r.id, r.content, u.username, r.book_id from reviews as r join users as u on r.user_id = u.id where r.book_id = $1`
+	query := `select r.id, r.content, u.username, r.book_id, coalesce(sum(rl.liked::int), 0) as likes from
+	reviews as r join users as u on r.user_id = u.id left join
+	review_likes as rl on r.id = rl.review_id where r.book_id = $1 group by r.id, u.id
+	`
 	var reviews []review.ReviewDetail
 
 	rows, err := r.db.Query(ctx, query, bookId)
@@ -31,7 +34,7 @@ func (r *reviewRepo) GetReviews(ctx context.Context, bookId int) ([]review.Revie
 
 	for rows.Next() {
 		var rev review.ReviewDetail
-		if err := rows.Scan(&rev.Id, &rev.Content, &rev.Username, &rev.BookId); err != nil {
+		if err := rows.Scan(&rev.Id, &rev.Content, &rev.Username, &rev.BookId, &rev.Likes); err != nil {
 			return nil, err
 		}
 
@@ -43,8 +46,9 @@ func (r *reviewRepo) GetReviews(ctx context.Context, bookId int) ([]review.Revie
 
 func (r *reviewRepo) GetMyReviews(ctx context.Context, userId int) ([]review.UserReview, error) {
 	query := `
-	select r.id, r.content, b.name, b.id from reviews as r join books as b on r.book_id = b.id
-	join users as u on r.user_id = u.id where u.id = $1
+	select r.id, r.content, b.name, b.id, coalesce(sum(rl.liked::int), 0) as likes from
+	books as b join reviews as r on b.id = r.book_id left join
+	review_likes as rl on r.id = rl.review_id where r.user_id = $1 group by b.id, r.id
 	`
 
 	var reviews []review.UserReview
@@ -56,7 +60,7 @@ func (r *reviewRepo) GetMyReviews(ctx context.Context, userId int) ([]review.Use
 
 	for rows.Next() {
 		var rev review.UserReview
-		if err := rows.Scan(&rev.Id, &rev.Content, &rev.BookName, &rev.BookId); err != nil {
+		if err := rows.Scan(&rev.Id, &rev.Content, &rev.BookName, &rev.BookId, &rev.Likes); err != nil {
 			return nil, err
 		}
 
@@ -68,8 +72,9 @@ func (r *reviewRepo) GetMyReviews(ctx context.Context, userId int) ([]review.Use
 
 func (r *reviewRepo) GetUserReviews(ctx context.Context, username string) ([]review.UserReview, error) {
 	query := `
-	select r.id, r.content, b.name, b.id from reviews as r join books as b on r.book_id = b.id
-	join users as u on r.user_id = u.id where u.username = $1
+	select r.id, r.content, b.name, b.id, coalesce(sum(rl.liked::int), 0) as likes from
+	(books as b join reviews as r on b.id = r.book_id) join users as u on r.user_id = u.id
+	left join review_likes as rl on r.id = rl.review_id where u.username = $1 group by b.id, r.id
 	`
 
 	var reviews []review.UserReview
@@ -81,7 +86,7 @@ func (r *reviewRepo) GetUserReviews(ctx context.Context, username string) ([]rev
 
 	for rows.Next() {
 		var rev review.UserReview
-		if err := rows.Scan(&rev.Id, &rev.Content, &rev.BookName, &rev.BookId); err != nil {
+		if err := rows.Scan(&rev.Id, &rev.Content, &rev.BookName, &rev.BookId, &rev.Likes); err != nil {
 			return nil, err
 		}
 
@@ -107,6 +112,23 @@ func (r *reviewRepo) AddReview(ctx context.Context, newReview review.ReviewReq) 
 	}
 
 	return rev, nil
+}
+
+func (r *reviewRepo) ReviewLike(ctx context.Context, reviewId, userId int, liked bool) error {
+	query := `insert into review_likes (review_id, user_id, liked) values ($1, $2, $3) on conflict
+	(review_id, user_id) do update set liked = $3
+	`
+
+	_, err := r.db.Exec(ctx, query, reviewId, userId, liked)
+	if err != nil {
+		if err, ok := err.(*pgconn.PgError); ok && err.Code == "23503" {
+			return review.ErrNotFound
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 func (r *reviewRepo) GetUserId(ctx context.Context, reviewId int) (int, error) {
