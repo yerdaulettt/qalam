@@ -58,6 +58,7 @@ func main() {
 	go rConsumer.DeleteBookId(ctx)
 
 	r := chi.NewRouter()
+	r.Use(httphandler.LogMiddleware)
 
 	r.Mount("/api", httphandler.NewReviewRouter(reviewS, jwtAuth))
 	r.Mount("/admin", httphandler.NewAdminRouter(adminS, jwtAuth))

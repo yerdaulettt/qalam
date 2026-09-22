@@ -1,5 +1,9 @@
 package review
 
+import (
+	"time"
+)
+
 type Review struct {
 	Id      int    `json:"id"`
 	Content string `json:"content"`
@@ -42,6 +46,23 @@ type ReviewUpdate struct {
 	Content  string `json:"content"`
 	ReviewId int
 	UserId   int
+}
+
+type report struct {
+	Id         int       `json:"id"`
+	Problem    string    `json:"problem"`
+	ReportedAt time.Time `json:"reported_at"`
+}
+
+type ReportDetail struct {
+	ReviewId      int      `json:"review_id"`
+	ReviewContent string   `json:"review_content"`
+	BookName      string   `json:"book_name"`
+	BookId        int      `json:"book_id"`
+	Username      string   `json:"username"`
+	UserId        int      `json:"user_id"`
+	Total         int      `json:"total"`
+	Reports       []report `json:"reports"`
 }
 
 type Message struct {

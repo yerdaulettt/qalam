@@ -203,3 +203,18 @@ func (r *reviewRepo) UpdateBook(ctx context.Context, bookId int, name string) er
 
 	return nil
 }
+
+func (r *reviewRepo) ReportReview(ctx context.Context, reviewId int, problem string) error {
+	query := `insert into reports (problem, review_id) values ($1, $2)`
+
+	_, err := r.db.Exec(ctx, query, problem, reviewId)
+	if err != nil {
+		if err, ok := err.(*pgconn.PgError); ok && err.Code == "23503" {
+			return review.ErrNotFound
+		}
+
+		return err
+	}
+
+	return nil
+}

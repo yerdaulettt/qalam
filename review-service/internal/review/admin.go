@@ -5,6 +5,8 @@ import "context"
 type adminRepository interface {
 	GetAllReviews(ctx context.Context) ([]ReviewDetailAdmin, error)
 	DeleteReview(ctx context.Context, reviewId int) (Review, error)
+	GetReports(ctx context.Context) ([]ReportDetail, error)
+	DeleteFakeReports(ctx context.Context, reviewId int) error
 }
 
 type AdminService struct {
@@ -31,4 +33,21 @@ func (s *AdminService) DeleteReview(ctx context.Context, reviewId int) (Review, 
 	}
 
 	return rev, nil
+}
+
+func (s *AdminService) GetReports(ctx context.Context) ([]ReportDetail, error) {
+	reports, err := s.repo.GetReports(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return reports, nil
+}
+
+func (s *AdminService) DeleteFakeReports(ctx context.Context, reviewId int) error {
+	if err := s.repo.DeleteFakeReports(ctx, reviewId); err != nil {
+		return err
+	}
+
+	return nil
 }

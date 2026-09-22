@@ -21,7 +21,7 @@ func (h *reviewHandler) GetReviews(w http.ResponseWriter, r *http.Request) {
 
 	bookId, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		errorResponse(w, ErrNumber)
+		errorResponse(w, errNumber)
 		return
 	}
 
@@ -59,7 +59,7 @@ func (h *reviewHandler) GetMyReviews(w http.ResponseWriter, r *http.Request) {
 
 	userId, ok := r.Context().Value("userId").(int)
 	if !ok {
-		errorResponse(w, ErrUserId)
+		errorResponse(w, errUserId)
 		return
 	}
 
@@ -80,13 +80,13 @@ func (h *reviewHandler) AddReview(w http.ResponseWriter, r *http.Request) {
 
 	bookId, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		errorResponse(w, ErrNumber)
+		errorResponse(w, errNumber)
 		return
 	}
 
 	userId, ok := r.Context().Value("userId").(int)
 	if !ok {
-		errorResponse(w, ErrUserId)
+		errorResponse(w, errUserId)
 		return
 	}
 
@@ -118,13 +118,13 @@ func (h *reviewHandler) ReviewLike(w http.ResponseWriter, r *http.Request) {
 
 	reviewId, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		errorResponse(w, ErrNumber)
+		errorResponse(w, errNumber)
 		return
 	}
 
 	userId, ok := r.Context().Value("userId").(int)
 	if !ok {
-		errorResponse(w, ErrUserId)
+		errorResponse(w, errUserId)
 		return
 	}
 
@@ -147,13 +147,13 @@ func (h *reviewHandler) UpdateReview(w http.ResponseWriter, r *http.Request) {
 
 	reviewId, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		errorResponse(w, ErrNumber)
+		errorResponse(w, errNumber)
 		return
 	}
 
 	userId, ok := r.Context().Value("userId").(int)
 	if !ok {
-		errorResponse(w, ErrUserId)
+		errorResponse(w, errUserId)
 		return
 	}
 
@@ -184,13 +184,13 @@ func (h *reviewHandler) DeleteReview(w http.ResponseWriter, r *http.Request) {
 
 	reviewId, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		errorResponse(w, ErrNumber)
+		errorResponse(w, errNumber)
 		return
 	}
 
 	userId, ok := r.Context().Value("userId").(int)
 	if !ok {
-		errorResponse(w, ErrUserId)
+		errorResponse(w, errUserId)
 		return
 	}
 
@@ -204,4 +204,33 @@ func (h *reviewHandler) DeleteReview(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errorResponse(w, err)
 	}
+}
+
+func (h *reviewHandler) ReportReview(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	reviewId, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		errorResponse(w, errNumber)
+		return
+	}
+
+	var report struct {
+		Problem string `json:"problem"`
+	}
+
+	err = json.NewDecoder(r.Body).Decode(&report)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	err = h.service.ReportReview(r.Context(), reviewId, report.Problem)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(`{"message": "ok"}`))
 }

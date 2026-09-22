@@ -9,10 +9,10 @@ import (
 )
 
 var (
-	ErrInternal = errors.New("Internal server error")
-	ErrNumber   = errors.New("Incorrect number")
-	ErrUserId   = errors.New("Incorrect user id")
-	ErrNoToken  = errors.New("No token")
+	errInternal = errors.New("Internal server error")
+	errNumber   = errors.New("Incorrect number")
+	errUserId   = errors.New("Incorrect user id")
+	errNoToken  = errors.New("No token")
 	errRole     = errors.New("Incorrect role")
 )
 
@@ -26,11 +26,11 @@ func errorResponse(w http.ResponseWriter, err error) {
 		w.WriteHeader(http.StatusNotFound)
 	case review.ErrEmpty:
 		w.WriteHeader(http.StatusBadRequest)
-	case review.ErrUnauth:
+	case review.ErrUnauth, errNoToken:
 		w.WriteHeader(http.StatusUnauthorized)
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"` + ErrInternal.Error() + `"}`))
+		w.Write([]byte(`{"error":"` + errInternal.Error() + `"}`))
 		return
 	}
 

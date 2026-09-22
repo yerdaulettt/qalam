@@ -23,7 +23,7 @@ func JwtMiddleware(j *configs.JwtAuth) func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			t := r.Header.Get("Authorization")
 			if t == "" {
-				errorResponse(w, ErrNoToken)
+				errorResponse(w, errNoToken)
 				return
 			}
 
