@@ -10,6 +10,11 @@ import (
 
 var (
 	ErrInternal = errors.New("Internal server error")
+	errNumber   = errors.New("Incorrect number")
+	errQuery    = errors.New("Incorrect query param")
+	errUserId   = errors.New("Incorrect user id")
+	errNoToken  = errors.New("No token")
+	errRole     = errors.New("Incorrect role")
 )
 
 func errorResponse(w http.ResponseWriter, err error) {

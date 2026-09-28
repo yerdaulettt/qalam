@@ -9,6 +9,7 @@ type adminRepository interface {
 	NewGenre(ctx context.Context, name string) (Genre, error)
 	UpdateGenre(ctx context.Context, genreId int, name string) (Genre, error)
 	DeleteGenre(ctx context.Context, genreId int) (Genre, error)
+	AddBook(ctx context.Context, newBook NewBook) error
 	UpdateBook(ctx context.Context, newBook *BookUpdate) (*BookUpdate, error)
 	DeleteBook(ctx context.Context, bookId int) error
 	AddAuthor(ctx context.Context, newAuthor *NewAuthor) (*Author, error)
@@ -53,6 +54,15 @@ func (s *AdminService) DeleteGenre(ctx context.Context, genreId int) (Genre, err
 	}
 
 	return g, nil
+}
+
+func (s *AdminService) AddBook(ctx context.Context, newBook NewBook) error {
+	err := s.repo.AddBook(ctx, newBook)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *AdminService) UpdateBook(ctx context.Context, newBook *BookUpdate) (*BookUpdate, error) {

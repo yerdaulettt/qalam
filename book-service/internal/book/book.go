@@ -8,6 +8,7 @@ type BookRepository interface {
 	GetBooks(ctx context.Context) ([]Book, error)
 	GetBook(ctx context.Context, bookId int) (*BookDetails, error)
 	GetGenres(ctx context.Context) ([]GenreDetails, error)
+	AddRating(ctx context.Context, bookId, userId, rating int) error
 }
 
 type BookService struct {
@@ -43,4 +44,13 @@ func (s *BookService) GetGenres(ctx context.Context) ([]GenreDetails, error) {
 	}
 
 	return g, nil
+}
+
+func (s *BookService) AddRating(ctx context.Context, bookId, userId, rating int) error {
+	err := s.repo.AddRating(ctx, bookId, userId, rating)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

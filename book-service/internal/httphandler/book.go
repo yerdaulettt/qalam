@@ -69,3 +69,33 @@ func (h *bookHandler) GetGenres(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (h *bookHandler) AddRating(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	bookId, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		errorResponse(w, errNumber)
+		return
+	}
+
+	rating, err := strconv.Atoi(r.URL.Query().Get("rating"))
+	if err != nil {
+		errorResponse(w, errQuery)
+		return
+	}
+
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		errorResponse(w, errUserId)
+		return
+	}
+
+	err = h.service.AddRating(r.Context(), bookId, userId, rating)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	w.Write([]byte(`{"message": "ok"}`))
+}

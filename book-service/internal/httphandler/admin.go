@@ -96,6 +96,25 @@ func (h *adminHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *adminHandler) AddBook(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var newBook book.NewBook
+	err := json.NewDecoder(r.Body).Decode(&newBook)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	err = h.service.AddBook(r.Context(), newBook)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+
+	w.Write([]byte(`{"message": "ok"}`))
+}
+
 func (h *adminHandler) UpdateBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

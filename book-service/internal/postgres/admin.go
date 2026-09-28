@@ -3,11 +3,14 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
+	"strings"
 
 	"book-service/internal/book"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -54,6 +57,54 @@ func (r *adminRepo) DeleteGenre(ctx context.Context, genreId int) (book.Genre, e
 	}
 
 	return g, nil
+}
+
+func (r *adminRepo) AddBook(ctx context.Context, newBook book.NewBook) error {
+	t, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer t.Rollback(ctx)
+
+	query := "insert into books (name, description, author_id) values ($1, $2, $3) returning id"
+	var bookId int
+
+	err = t.QueryRow(ctx, query, newBook.Name, newBook.Description, newBook.AuthorId).Scan(&bookId)
+	if err != nil {
+		if err, ok := err.(*pgconn.PgError); ok && err.Code == "23503" {
+			return book.ErrAuthorNotFound
+		}
+
+		return err
+	}
+
+	if len(newBook.Genres) > 0 {
+		var b strings.Builder
+		b.WriteString("insert into book_genres (book_id, genre_id) values ($1, $2)")
+
+		params := []any{bookId, newBook.Genres[0]}
+
+		for i, id := range newBook.Genres[1:] {
+			params = append(params, id)
+			fmt.Fprintf(&b, ", ($1, $%d)", i+3)
+		}
+
+		_, err = t.Exec(ctx, b.String(), params...)
+		if err != nil {
+			if err, ok := err.(*pgconn.PgError); ok && err.Code == "23503" {
+				return book.ErrGenreNotFound
+			}
+
+			return err
+		}
+	}
+
+	err = t.Commit(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *adminRepo) UpdateBook(ctx context.Context, newBook *book.BookUpdate) (*book.BookUpdate, error) {

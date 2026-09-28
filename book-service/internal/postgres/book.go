@@ -7,6 +7,7 @@ import (
 	"book-service/internal/book"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -21,11 +22,12 @@ func NewBookRepo(db *pgxpool.Pool) *bookRepo {
 func (r *bookRepo) GetBooks(ctx context.Context) ([]book.Book, error) {
 	query := `
 	with book_details as (
-		select b.id, b.name, b.author_id, jsonb_agg_strict(to_jsonb(g)) as genre from
+		select b.id, b.name, b.author_id, coalesce(avg(br.rating)::int, 0) as rating, count(br.rating), jsonb_agg_strict(to_jsonb(g)) as genre from
 		(books as b left join book_genres as bg on b.id = bg.book_id)
-		left join genres as g on bg.genre_id = g.id group by b.id)
+		left join genres as g on bg.genre_id = g.id
+		left join book_ratings as br on b.id = br.book_id group by b.id)
 
-	select bd.id, bd.name, a.id, a.name, a.surname, bd.genre from book_details as bd join authors as a on bd.author_id = a.id
+	select bd.id, bd.name, a.id, a.name, a.surname, bd.rating, bd.count, bd.genre from book_details as bd join authors as a on bd.author_id = a.id
 	`
 
 	var books []book.Book
@@ -39,7 +41,7 @@ func (r *bookRepo) GetBooks(ctx context.Context) ([]book.Book, error) {
 	for rows.Next() {
 		var b book.Book
 
-		err := rows.Scan(&b.Id, &b.Name, &b.AuthorId, &b.AuthorName, &b.AuthorSurname, &b.Genres)
+		err := rows.Scan(&b.Id, &b.Name, &b.AuthorId, &b.AuthorName, &b.AuthorSurname, &b.Rating, &b.RatingCount, &b.Genres)
 		if err != nil {
 			return nil, err
 		}
@@ -76,7 +78,7 @@ func (r *bookRepo) GetBook(ctx context.Context, bookId int) (*book.BookDetails, 
 }
 
 func (r *bookRepo) GetGenres(ctx context.Context) ([]book.GenreDetails, error) {
-	query := `select g.id, g.name, count(bg) from genres as g join book_genres as bg on g.id = bg.genre_id group by g.id`
+	query := `select g.id, g.name, count(bg) from genres as g left join book_genres as bg on g.id = bg.genre_id group by g.id`
 
 	var genres []book.GenreDetails
 	rows, err := r.db.Query(ctx, query)
@@ -96,4 +98,21 @@ func (r *bookRepo) GetGenres(ctx context.Context) ([]book.GenreDetails, error) {
 	}
 
 	return genres, nil
+}
+
+func (r *bookRepo) AddRating(ctx context.Context, bookId, userId, rating int) error {
+	query := `insert into book_ratings (book_id, user_id, rating) values ($1, $2, $3)
+	on conflict (book_id, user_id) do update set rating = $3
+	`
+
+	_, err := r.db.Exec(ctx, query, bookId, userId, rating)
+	if err != nil {
+		if err, ok := err.(*pgconn.PgError); ok && err.Code == "23503" {
+			return book.ErrNotFound
+		}
+
+		return err
+	}
+
+	return nil
 }

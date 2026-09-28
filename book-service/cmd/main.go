@@ -47,20 +47,25 @@ func main() {
 
 	adminP := rabbitmq.NewAdminPublisher(p, mq.Management)
 
+	jwtAuth, err := configs.NewJwtAuth()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	r := chi.NewRouter()
 
 	r.Use(httphandler.LogMiddleware)
 
 	bookR := postgres.NewBookRepo(db)
 	bookS := book.NewBookService(bookR)
-	bookRouter := httphandler.NewBookRouter(bookS)
+	bookRouter := httphandler.NewBookRouter(bookS, jwtAuth)
 
 	adminR := postgres.NewAdminRepo(db)
 	adminS := book.NewAdminService(adminR, adminP)
-	adminRouter := httphandler.NewAdminRouter(adminS)
+	adminRouter := httphandler.NewAdminRouter(adminS, jwtAuth)
 
 	r.Mount("/api", bookRouter)
 	r.Mount("/admin", adminRouter)
 
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Fatal(http.ListenAndServe(":8081", r))
 }
