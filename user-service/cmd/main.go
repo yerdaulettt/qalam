@@ -48,5 +48,5 @@ func main() {
 	r.Handle("/auth/", http.StripPrefix("/auth", authRouter))
 	r.Handle("/api/", http.StripPrefix("/api", profileRouter))
 
-	log.Fatal(http.ListenAndServe(":8080", httphandler.LogMiddleware(r)))
+	log.Fatal(http.ListenAndServe(":8081", httphandler.LogMiddleware(r)))
 }

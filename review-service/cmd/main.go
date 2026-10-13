@@ -63,5 +63,5 @@ func main() {
 	r.Mount("/api", httphandler.NewReviewRouter(reviewS, jwtAuth))
 	r.Mount("/admin", httphandler.NewAdminRouter(adminS, jwtAuth))
 
-	log.Fatal(http.ListenAndServe(":8082", r))
+	log.Fatal(http.ListenAndServe(":8083", r))
 }
