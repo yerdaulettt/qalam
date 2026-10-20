@@ -4,6 +4,9 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
 	"book-service/internal/book"
 	"book-service/internal/configs"
@@ -21,6 +24,9 @@ func main() {
 	}
 
 	ctx := context.Background()
+
+	notify, cancel := signal.NotifyContext(ctx, os.Interrupt)
+	defer cancel()
 
 	postgresCfg, err := configs.NewPostgresConfig()
 	if err != nil {
@@ -67,5 +73,28 @@ func main() {
 	r.Mount("/api", bookRouter)
 	r.Mount("/admin", adminRouter)
 
-	log.Fatal(http.ListenAndServe(":8082", r))
+	server := &http.Server{
+		Addr:    ":8082",
+		Handler: r,
+	}
+
+	go func() {
+		log.Println("Starting")
+		if err := server.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+
+	<-notify.Done()
+	cancel()
+	log.Println("Shutdown signal")
+
+	stopCtx, stop := context.WithTimeout(ctx, 10*time.Second)
+	defer stop()
+
+	if err := server.Shutdown(stopCtx); err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("Stopped")
 }

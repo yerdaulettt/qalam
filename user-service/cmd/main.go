@@ -4,6 +4,9 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
 	"user-service/internal/auth"
 	"user-service/internal/configs"
@@ -19,6 +22,9 @@ func main() {
 	}
 
 	ctx := context.Background()
+
+	notify, cancel := signal.NotifyContext(ctx, os.Interrupt)
+	defer cancel()
 
 	postgresCfg, err := configs.NewPostgresConfig()
 	if err != nil {
@@ -48,5 +54,28 @@ func main() {
 	r.Handle("/auth/", http.StripPrefix("/auth", authRouter))
 	r.Handle("/api/", http.StripPrefix("/api", profileRouter))
 
-	log.Fatal(http.ListenAndServe(":8081", httphandler.LogMiddleware(r)))
+	server := &http.Server{
+		Addr:    ":8081",
+		Handler: httphandler.LogMiddleware(r),
+	}
+
+	go func() {
+		log.Println("Starting")
+		if err := server.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+
+	<-notify.Done()
+	cancel()
+	log.Println("Shutdown signal")
+
+	stopCtx, stop := context.WithTimeout(ctx, 10*time.Second)
+	defer stop()
+
+	if err := server.Shutdown(stopCtx); err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("Stopped")
 }
