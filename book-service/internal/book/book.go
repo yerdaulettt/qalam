@@ -5,7 +5,7 @@ import (
 )
 
 type BookRepository interface {
-	GetBooks(ctx context.Context) ([]Book, error)
+	GetBooks(ctx context.Context, filters []Filter) ([]Book, error)
 	GetBook(ctx context.Context, bookId int) (*BookDetails, error)
 	GetGenres(ctx context.Context) ([]GenreDetails, error)
 	AddRating(ctx context.Context, bookId, userId, rating int) error
@@ -19,8 +19,20 @@ func NewBookService(r BookRepository) *BookService {
 	return &BookService{repo: r}
 }
 
-func (s *BookService) GetBooks(ctx context.Context) ([]Book, error) {
-	books, err := s.repo.GetBooks(ctx)
+func (s *BookService) GetBooks(ctx context.Context, filters []Filter) ([]Book, error) {
+	columns := map[string]bool{
+		"author_name":    true,
+		"author_surname": true,
+		"rating":         true,
+	}
+
+	for _, f := range filters {
+		if !columns[f.Column] {
+			return nil, ErrFilter
+		}
+	}
+
+	books, err := s.repo.GetBooks(ctx, filters)
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"book-service/internal/book"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -22,6 +24,30 @@ func NewPostgresPool(ctx context.Context, dbUrl string) (*pgxpool.Pool, error) {
 	}
 
 	return db, nil
+}
+
+func filterHelper(query string, filters []book.Filter, columns map[string]string) (string, []any) {
+	var b strings.Builder
+	b.WriteString(query)
+	b.WriteString(" where ")
+
+	var res []string
+	var params []any
+
+	var c string
+	for i, f := range filters {
+		c = columns[f.Column]
+		if c == "" {
+			c = f.Column
+		}
+
+		res = append(res, fmt.Sprintf("%s %s $%d", c, f.Operation, i+1))
+		params = append(params, f.Value)
+	}
+
+	b.WriteString(strings.Join(res, " and "))
+
+	return b.String(), params
 }
 
 func updateHelper(table string, columns, columnsReturn []string) string {

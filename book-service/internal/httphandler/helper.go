@@ -4,6 +4,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"book-service/internal/book"
 )
@@ -32,4 +34,23 @@ func errorResponse(w http.ResponseWriter, err error) {
 	}
 
 	w.Write([]byte(`{"error":"` + err.Error() + `"}`))
+}
+
+func getFilters(values url.Values) []book.Filter {
+	var f []book.Filter
+
+	for k, v := range values {
+		switch {
+		case strings.HasSuffix(k, "_gte"):
+			f = append(f, book.Filter{Column: strings.TrimSuffix(k, "_gte"), Operation: ">=", Value: v[0]})
+		case strings.HasSuffix(k, "_lte"):
+			f = append(f, book.Filter{Column: strings.TrimSuffix(k, "_lte"), Operation: "<=", Value: v[0]})
+		case strings.HasSuffix(k, "_like"):
+			f = append(f, book.Filter{Column: strings.TrimSuffix(k, "_like"), Operation: "like", Value: v[0]})
+		default:
+			f = append(f, book.Filter{Column: k, Operation: "=", Value: v[0]})
+		}
+	}
+
+	return f
 }

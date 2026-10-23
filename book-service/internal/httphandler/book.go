@@ -19,7 +19,7 @@ func NewBookHandler(s *book.BookService) *bookHandler {
 func (h *bookHandler) GetBooks(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	books, err := h.service.GetBooks(r.Context())
+	books, err := h.service.GetBooks(r.Context(), getFilters(r.URL.Query()))
 	if err != nil {
 		errorResponse(w, err)
 		return

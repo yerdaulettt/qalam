@@ -1,7 +1,5 @@
 package book
 
-import "encoding/json"
-
 type Genre struct {
 	Id   int    `json:"id"`
 	Name string `json:"name"`
@@ -10,19 +8,6 @@ type Genre struct {
 type GenreDetails struct {
 	Genre
 	TotalBooks int `json:"total_books"`
-}
-
-type GenreSlice []Genre
-
-func (g *GenreSlice) Scan(src any) error {
-	var data []byte
-
-	switch v := src.(type) {
-	case []byte:
-		data = v
-	}
-
-	return json.Unmarshal(data, g)
 }
 
 type Book struct {
@@ -80,4 +65,10 @@ type BookDeletedMessage struct {
 type BookMessage struct {
 	BookId int    `json:"book_id"`
 	Name   string `json:"name"`
+}
+
+type Filter struct {
+	Column    string
+	Operation string
+	Value     string
 }

@@ -19,7 +19,7 @@ func NewBookRepo(db *pgxpool.Pool) *bookRepo {
 	return &bookRepo{db: db}
 }
 
-func (r *bookRepo) GetBooks(ctx context.Context) ([]book.Book, error) {
+func (r *bookRepo) GetBooks(ctx context.Context, filters []book.Filter) ([]book.Book, error) {
 	query := `
 	with book_details as (
 		select b.id, b.name, b.author_id, coalesce(avg(br.rating)::int, 0) as rating, count(br.rating), jsonb_agg_strict(to_jsonb(g)) as genre from
@@ -32,7 +32,14 @@ func (r *bookRepo) GetBooks(ctx context.Context) ([]book.Book, error) {
 
 	var books []book.Book
 
-	rows, err := r.db.Query(ctx, query)
+	columns := map[string]string{
+		"author_name":    "a.name",
+		"author_surname": "a.surname",
+	}
+
+	q, params := filterHelper(query, filters, columns)
+
+	rows, err := r.db.Query(ctx, q, params...)
 	if err != nil {
 		return nil, err
 	}
