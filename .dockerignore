@@ -1,0 +1,9 @@
+.git
+.env
+.env.example
+.gitignore
+.dockerignore
+Dockerfile
+compose.yaml
+init.sql
+README.md

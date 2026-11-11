@@ -1,20 +1,20 @@
 services:
   auth:
-    url: "http://localhost:8081"
+    url: "http://user:8081"
     endpoints:
       - "POST /auth/login"
       - "POST /auth/register"
       - "POST /auth/refresh"
       - "GET /api/my/profile"
   book:
-    url: "http://localhost:8082"
+    url: "http://book:8082"
     endpoints:
       - "GET /api/books"
       - "GET /api/books/{id}"
       - "GET /api/genres"
       - "PUT /api/books/{id}/ratings"
   review:
-    url: "http://localhost:8083"
+    url: "http://review:8083"
     endpoints:
       - "GET /api/books/{id}/reviews"
       - "GET /api/users/{username}/reviews"
