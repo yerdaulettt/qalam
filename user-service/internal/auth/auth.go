@@ -42,4 +42,5 @@ var (
 	ErrUsername          = errors.New("Username exists")
 	ErrShortPassword     = errors.New("Minimum password len is 8")
 	ErrIncorrectPassword = errors.New("Incorrect password")
+	ErrRole              = errors.New("Incorrect role")
 )

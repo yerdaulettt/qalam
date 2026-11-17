@@ -2,17 +2,12 @@ package postgres
 
 import (
 	"context"
-	"fmt"
-
-	"user-service/internal/configs"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func NewPostgresPool(ctx context.Context, cfg *configs.PostgresConfig) (*pgxpool.Pool, error) {
-	url := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName, cfg.SslMode)
-
-	db, err := pgxpool.New(ctx, url)
+func NewPostgresPool(ctx context.Context, dbUrl string) (*pgxpool.Pool, error) {
+	db, err := pgxpool.New(ctx, dbUrl)
 	if err != nil {
 		return nil, err
 	}

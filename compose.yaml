@@ -17,6 +17,23 @@ services:
       timeout: 10s
       start_period: 10s
 
+  migrate:
+    image: migrate/migrate:v4.20.1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - "./book-service/migrations:/book-migrations"
+      - "./user-service/migrations:/user-migrations"
+      - "./review-service/migrations:/review-migrations"
+    env_file:
+      - .env
+    entrypoint: ["sh", "-c"]
+    command: |
+      "migrate -path=/book-migrations -database ${BOOK_DB} up
+      migrate -path=/user-migrations -database ${USER_DB} up
+      migrate -path=/review-migrations -database ${REVIEW_DB} up"
+
   rabbit:
     image: rabbitmq:4.3.5-management-alpine
     container_name: rabbit
@@ -24,7 +41,7 @@ services:
       - "5673:5672"
       - "15673:15672"
     healthcheck:
-      test: "rabbitmq-diagnostics -q ping"
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
       interval: 10s
       timeout: 10s
       retries: 3
@@ -47,8 +64,6 @@ services:
       - .env
     depends_on:
       postgres:
-        condition: service_healthy
-      rabbit:
         condition: service_healthy
 
   book:

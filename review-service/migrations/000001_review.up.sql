@@ -12,5 +12,5 @@ create table if not exists reviews (
     id serial primary key,
     content text not null,
     user_id int references users(id) on delete cascade,
-    book_id int references books(id) on delete cascade,
+    book_id int references books(id) on delete cascade
 );

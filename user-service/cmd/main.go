@@ -21,17 +21,17 @@ func main() {
 		log.Println(err)
 	}
 
+	cfg, err := configs.NewConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	ctx := context.Background()
 
 	notify, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
-	postgresCfg, err := configs.NewPostgresConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	db, err := postgres.NewPostgresPool(ctx, postgresCfg)
+	db, err := postgres.NewPostgresPool(ctx, cfg.DbUrl)
 	if err != nil {
 		log.Println(err)
 	}
@@ -39,13 +39,8 @@ func main() {
 
 	r := http.NewServeMux()
 
-	jwtCfg, err := configs.NewJwtConfig()
-	if err != nil {
-		log.Fatal(jwtCfg)
-	}
-
 	authR := postgres.NewAuthRepo(db)
-	jwtAuth := auth.NewJwtAuth(jwtCfg.Secret, jwtCfg.AccessTtl, jwtCfg.RefreshTtl)
+	jwtAuth := auth.NewJwtAuth(cfg.JwtSecret, cfg.JwtAccessTtl, cfg.JwtRefreshTtl)
 	authS := auth.NewAuthService(authR, jwtAuth)
 	authRouter := httphandler.NewAuthRouter(authS)
 

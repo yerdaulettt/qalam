@@ -1,10 +1,13 @@
 package auth
 
-import "context"
+import (
+	"context"
+	"slices"
+)
 
 type AuthRepository interface {
 	GetUser(ctx context.Context, username string) (UserVerify, error)
-	GetUsername(ctx context.Context, username string) (string, error)
+	GetUsernameStatus(ctx context.Context, username string) (bool, error)
 	Register(ctx context.Context, u RegisterReq) (User, error)
 	GetMyProfile(ctx context.Context, userId int) (User, error)
 }
@@ -23,21 +26,23 @@ func (s *AuthService) Register(ctx context.Context, u RegisterReq) (User, error)
 		return User{}, ErrEmptyFields
 	}
 
-	if u.Role == "" {
-		u.Role = "user"
+	if len(u.Password) < 8 {
+		return User{}, ErrShortPassword
 	}
 
-	uname, err := s.repo.GetUsername(ctx, u.Username)
+	if u.Role == "" {
+		u.Role = "user"
+	} else if !slices.Contains([]string{"user", "admin"}, u.Role) {
+		return User{}, ErrRole
+	}
+
+	ok, err := s.repo.GetUsernameStatus(ctx, u.Username)
 	if err != nil {
 		return User{}, err
 	}
 
-	if uname == u.Username {
+	if !ok {
 		return User{}, ErrUsername
-	}
-
-	if len(u.Password) < 8 {
-		return User{}, ErrShortPassword
 	}
 
 	hash, err := hashPassword(u.Password)

@@ -18,19 +18,23 @@ func NewAuthRepo(db *pgxpool.Pool) *authRepo {
 	return &authRepo{db: db}
 }
 
-func (r *authRepo) GetUsername(ctx context.Context, username string) (string, error) {
-	var uname string
+func (r *authRepo) GetUsernameStatus(ctx context.Context, username string) (bool, error) {
+	var id int
 
-	err := r.db.QueryRow(ctx, "select id from users where username = $1", username).Scan(&uname)
+	err := r.db.QueryRow(ctx, "select id from users where username = $1", username).Scan(&id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", nil
+			return true, nil
 		}
 
-		return "", err
+		return false, err
 	}
 
-	return uname, nil
+	if id != 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func (r *authRepo) GetUser(ctx context.Context, username string) (auth.UserVerify, error) {
