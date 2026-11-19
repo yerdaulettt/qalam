@@ -41,13 +41,7 @@ func (h *adminHandler) DeleteReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rev, err := h.service.DeleteReview(r.Context(), reviewId)
-	if err != nil {
-		errorResponse(w, err)
-		return
-	}
-
-	err = json.NewEncoder(w).Encode(&rev)
+	err = h.service.DeleteReview(r.Context(), reviewId)
 	if err != nil {
 		errorResponse(w, err)
 		return

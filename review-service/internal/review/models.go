@@ -5,10 +5,12 @@ import (
 )
 
 type Review struct {
-	Id      int    `json:"id"`
-	Content string `json:"content"`
-	UserId  int    `json:"user_id"`
-	BookId  int    `json:"book_id"`
+	Id       int    `json:"id"`
+	Content  string `json:"content"`
+	Username string `json:"username"`
+	UserId   int    `json:"user_id"`
+	BookId   int    `json:"book_id"`
+	Likes    int    `json:"likes"`
 }
 
 type ReviewDetailAdmin struct {
@@ -18,14 +20,6 @@ type ReviewDetailAdmin struct {
 	BookId   int    `json:"book_id"`
 	Username string `json:"username"`
 	UserId   int    `json:"user_id"`
-}
-
-type ReviewDetail struct {
-	Id       int    `json:"id"`
-	Content  string `json:"content"`
-	Username string `json:"username"`
-	BookId   int    `json:"book_id"`
-	Likes    int    `json:"likes"`
 }
 
 type UserReview struct {

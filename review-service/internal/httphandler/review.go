@@ -100,17 +100,13 @@ func (h *reviewHandler) AddReview(w http.ResponseWriter, r *http.Request) {
 	newReview.UserId = userId
 	newReview.BookId = bookId
 
-	rev, err := h.service.AddReview(r.Context(), newReview)
+	err = h.service.AddReview(r.Context(), newReview)
 	if err != nil {
 		errorResponse(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(rev)
-	if err != nil {
-		errorResponse(w, err)
-	}
 }
 
 func (h *reviewHandler) ReviewLike(w http.ResponseWriter, r *http.Request) {
@@ -167,15 +163,10 @@ func (h *reviewHandler) UpdateReview(w http.ResponseWriter, r *http.Request) {
 	newReview.ReviewId = reviewId
 	newReview.UserId = userId
 
-	rev, err := h.service.UpdateReview(r.Context(), newReview)
+	err = h.service.UpdateReview(r.Context(), newReview)
 	if err != nil {
 		errorResponse(w, err)
 		return
-	}
-
-	err = json.NewEncoder(w).Encode(rev)
-	if err != nil {
-		errorResponse(w, err)
 	}
 }
 
@@ -194,15 +185,10 @@ func (h *reviewHandler) DeleteReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rev, err := h.service.DeleteReview(r.Context(), reviewId, userId)
+	err = h.service.DeleteReview(r.Context(), reviewId, userId)
 	if err != nil {
 		errorResponse(w, err)
 		return
-	}
-
-	err = json.NewEncoder(w).Encode(rev)
-	if err != nil {
-		errorResponse(w, err)
 	}
 }
 

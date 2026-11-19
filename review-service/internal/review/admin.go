@@ -4,7 +4,7 @@ import "context"
 
 type adminRepository interface {
 	GetAllReviews(ctx context.Context) ([]ReviewDetailAdmin, error)
-	DeleteReview(ctx context.Context, reviewId int) (Review, error)
+	DeleteReview(ctx context.Context, reviewId int) error
 	GetReports(ctx context.Context) ([]ReportDetail, error)
 	DeleteFakeReports(ctx context.Context, reviewId int) error
 }
@@ -26,13 +26,12 @@ func (s *AdminService) GetAllReviews(ctx context.Context) ([]ReviewDetailAdmin, 
 	return reviews, nil
 }
 
-func (s *AdminService) DeleteReview(ctx context.Context, reviewId int) (Review, error) {
-	rev, err := s.repo.DeleteReview(ctx, reviewId)
-	if err != nil {
-		return Review{}, err
+func (s *AdminService) DeleteReview(ctx context.Context, reviewId int) error {
+	if err := s.repo.DeleteReview(ctx, reviewId); err != nil {
+		return err
 	}
 
-	return rev, nil
+	return nil
 }
 
 func (s *AdminService) GetReports(ctx context.Context) ([]ReportDetail, error) {

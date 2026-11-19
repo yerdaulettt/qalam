@@ -47,20 +47,19 @@ func (r *adminRepo) GetAllReviews(ctx context.Context) ([]review.ReviewDetailAdm
 	return reviews, nil
 }
 
-func (r *adminRepo) DeleteReview(ctx context.Context, reviewId int) (review.Review, error) {
-	query := "delete from reviews where id = $1 returning id, content, user_id, book_id"
-	var rev review.Review
+func (r *adminRepo) DeleteReview(ctx context.Context, reviewId int) error {
+	query := "delete from reviews where id = $1"
 
-	err := r.db.QueryRow(ctx, query, reviewId).Scan(&rev.Id, &rev.Content, &rev.UserId, &rev.BookId)
+	_, err := r.db.Exec(ctx, query, reviewId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return review.Review{}, review.ErrNotFound
+			return review.ErrNotFound
 		}
 
-		return review.Review{}, err
+		return err
 	}
 
-	return rev, nil
+	return nil
 }
 
 func (r *adminRepo) GetReports(ctx context.Context) ([]review.ReportDetail, error) {
