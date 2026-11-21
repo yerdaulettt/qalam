@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"user-service/internal/auth"
+	"user-service/internal/user"
 )
 
 var (
@@ -22,11 +22,11 @@ func errorResponse(w http.ResponseWriter, err error) {
 	log.Println(err)
 
 	switch err {
-	case auth.ErrNotFound:
+	case user.ErrNotFound:
 		w.WriteHeader(http.StatusNotFound)
-	case errJson, errToken, errUserId, auth.ErrEmptyFields, auth.ErrShortPassword, auth.ErrIncorrectPassword, auth.ErrIncorrectToken:
+	case errJson, errToken, errUserId, user.ErrEmptyFields, user.ErrShortPassword, user.ErrIncorrectPassword, user.ErrIncorrectToken:
 		w.WriteHeader(http.StatusBadRequest)
-	case auth.ErrUsername:
+	case user.ErrUsername:
 		w.WriteHeader(http.StatusConflict)
 	case errRole:
 		w.WriteHeader(http.StatusUnauthorized)

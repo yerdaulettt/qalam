@@ -1,7 +1,16 @@
-package auth
+package user
 
-import (
-	"errors"
+import "errors"
+
+var (
+	ErrEmptyFields       = errors.New("All fields required")
+	ErrIncorrectToken    = errors.New("Incorrect token")
+	ErrExpired           = errors.New("Token expired")
+	ErrNotFound          = errors.New("Not found")
+	ErrUsername          = errors.New("Username exists")
+	ErrShortPassword     = errors.New("Minimum password len is 8")
+	ErrIncorrectPassword = errors.New("Incorrect password")
+	ErrRole              = errors.New("Incorrect role")
 )
 
 type User struct {
@@ -33,14 +42,3 @@ type RegisterReq struct {
 	Password string `json:"password"`
 	Role     string `json:"role"`
 }
-
-var (
-	ErrEmptyFields       = errors.New("All fields required")
-	ErrIncorrectToken    = errors.New("Incorrect token")
-	ErrExpired           = errors.New("Token expired")
-	ErrNotFound          = errors.New("Not found")
-	ErrUsername          = errors.New("Username exists")
-	ErrShortPassword     = errors.New("Minimum password len is 8")
-	ErrIncorrectPassword = errors.New("Incorrect password")
-	ErrRole              = errors.New("Incorrect role")
-)

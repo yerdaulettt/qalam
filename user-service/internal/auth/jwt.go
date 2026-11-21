@@ -4,6 +4,8 @@ import (
 	"errors"
 	"time"
 
+	"user-service/internal/user"
+
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -31,7 +33,7 @@ func NewJwtAuth(s []byte, aTtl, rTtl time.Duration) *JwtAuth {
 func (j *JwtAuth) ParseToken(tokenString string) (*claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &claims{}, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, ErrIncorrectToken
+			return nil, user.ErrIncorrectToken
 		}
 
 		return j.secret, nil
@@ -39,15 +41,15 @@ func (j *JwtAuth) ParseToken(tokenString string) (*claims, error) {
 
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
-			return nil, ErrExpired
+			return nil, user.ErrExpired
 		}
 
-		return nil, ErrIncorrectToken
+		return nil, user.ErrIncorrectToken
 	}
 
 	tokenClaims, ok := token.Claims.(*claims)
 	if !ok || !token.Valid {
-		return nil, ErrIncorrectToken
+		return nil, user.ErrIncorrectToken
 	}
 
 	return tokenClaims, nil
@@ -95,36 +97,36 @@ func (j *JwtAuth) newRefreshToken(userId int, role string) (string, error) {
 	return tokenString, nil
 }
 
-func (j *JwtAuth) newTokens(userId int, role string) (JwtTokens, error) {
+func (j *JwtAuth) NewTokens(userId int, role string) (user.JwtTokens, error) {
 	access, err := j.newAccessToken(userId, role)
 	if err != nil {
-		return JwtTokens{}, err
+		return user.JwtTokens{}, err
 	}
 
 	refresh, err := j.newRefreshToken(userId, role)
 	if err != nil {
-		return JwtTokens{}, err
+		return user.JwtTokens{}, err
 	}
 
-	return JwtTokens{
+	return user.JwtTokens{
 		Access:  access,
 		Refresh: refresh,
 	}, nil
 }
 
-func (j *JwtAuth) refreshAccess(refresh string) (string, error) {
+func (j *JwtAuth) RefreshAccess(refresh string) (string, error) {
 	claims, err := j.ParseToken(refresh)
 	if err != nil {
 		return "", err
 	}
 
 	if claims.Type != "refresh" {
-		return "", ErrIncorrectToken
+		return "", user.ErrIncorrectToken
 	}
 
 	access, err := j.newAccessToken(claims.UserId, claims.Role)
 	if err != nil {
-		return "", ErrIncorrectToken
+		return "", user.ErrIncorrectToken
 	}
 
 	return access, nil

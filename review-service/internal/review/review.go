@@ -1,133 +1,76 @@
 package review
 
-import "context"
+import (
+	"errors"
+	"time"
+)
 
-type reviewRepository interface {
-	GetReviews(ctx context.Context, bookId int) ([]Review, error)
-	GetMyReviews(ctx context.Context, userId int) ([]UserReview, error)
-	GetUserReviews(ctx context.Context, username string) ([]UserReview, error)
-	AddReview(ctx context.Context, newReview ReviewReq) error
-	ReviewLike(ctx context.Context, reviewId, userId int, liked bool) error
-	GetUserId(ctx context.Context, reviewId int) (int, error)
-	UpdateReview(ctx context.Context, newReview ReviewUpdate) error
-	DeleteReview(ctx context.Context, reviewId, userId int) error
-	DeleteBookId(ctx context.Context, bookId int) error
-	UpdateBook(ctx context.Context, bookId int, name string) error
-	ReportReview(ctx context.Context, reviewId int, problem string) error
+var (
+	ErrNotFound = errors.New("Not found")
+	ErrEmpty    = errors.New("Empty field")
+	ErrUnauth   = errors.New("Unauthorized")
+)
+
+type Review struct {
+	Id       int    `json:"id"`
+	Content  string `json:"content"`
+	Username string `json:"username"`
+	UserId   int    `json:"user_id"`
+	BookId   int    `json:"book_id"`
+	Likes    int    `json:"likes"`
 }
 
-type ReviewService struct {
-	repo reviewRepository
+type ReviewDetailAdmin struct {
+	Id       int    `json:"id"`
+	Content  string `json:"content"`
+	BookName string `json:"book_name"`
+	BookId   int    `json:"book_id"`
+	Username string `json:"username"`
+	UserId   int    `json:"user_id"`
 }
 
-func NewReviewService(r reviewRepository) *ReviewService {
-	return &ReviewService{repo: r}
+type UserReview struct {
+	Id       int    `json:"id"`
+	Content  string `json:"content"`
+	BookName string `json:"book_name"`
+	BookId   int    `json:"book_id"`
+	Likes    int    `json:"likes"`
 }
 
-func (s *ReviewService) GetReviews(ctx context.Context, bookId int) ([]Review, error) {
-	r, err := s.repo.GetReviews(ctx, bookId)
-	if err != nil {
-		return nil, err
-	}
-
-	return r, nil
+type ReviewReq struct {
+	Content string `json:"content"`
+	UserId  int
+	BookId  int
 }
 
-func (s *ReviewService) GetMyReviews(ctx context.Context, userId int) ([]UserReview, error) {
-	r, err := s.repo.GetMyReviews(ctx, userId)
-	if err != nil {
-		return nil, err
-	}
-
-	return r, nil
+type ReviewUpdate struct {
+	Content  string `json:"content"`
+	ReviewId int
+	UserId   int
 }
 
-func (s *ReviewService) GetUserReviews(ctx context.Context, username string) ([]UserReview, error) {
-	r, err := s.repo.GetUserReviews(ctx, username)
-	if err != nil {
-		return nil, err
-	}
-
-	return r, nil
+type report struct {
+	Id         int       `json:"id"`
+	Problem    string    `json:"problem"`
+	ReportedAt time.Time `json:"reported_at"`
 }
 
-func (s *ReviewService) AddReview(ctx context.Context, newReview ReviewReq) error {
-	if newReview.Content == "" || newReview.BookId == 0 || newReview.UserId == 0 {
-		return ErrEmpty
-	}
-
-	if err := s.repo.AddReview(ctx, newReview); err != nil {
-		return err
-	}
-
-	return nil
+type ReportDetail struct {
+	ReviewId      int      `json:"review_id"`
+	ReviewContent string   `json:"review_content"`
+	BookName      string   `json:"book_name"`
+	BookId        int      `json:"book_id"`
+	Username      string   `json:"username"`
+	UserId        int      `json:"user_id"`
+	Total         int      `json:"total"`
+	Reports       []report `json:"reports"`
 }
 
-func (s *ReviewService) ReviewLike(ctx context.Context, reviewId, userId int, liked bool) error {
-	err := s.repo.ReviewLike(ctx, reviewId, userId, liked)
-	if err != nil {
-		return err
-	}
-
-	return nil
+type Message struct {
+	BookId int `json:"book_id"`
 }
 
-func (s *ReviewService) UpdateReview(ctx context.Context, newReview ReviewUpdate) error {
-	correctUserId, err := s.repo.GetUserId(ctx, newReview.ReviewId)
-	if err != nil {
-		return err
-	}
-
-	if newReview.UserId != correctUserId {
-		return ErrUnauth
-	}
-
-	err = s.repo.UpdateReview(ctx, newReview)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *ReviewService) DeleteReview(ctx context.Context, reviewId, userId int) error {
-	correctUserId, err := s.repo.GetUserId(ctx, reviewId)
-	if err != nil {
-		return err
-	}
-
-	if userId != correctUserId {
-		return ErrUnauth
-	}
-
-	err = s.repo.DeleteReview(ctx, reviewId, userId)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *ReviewService) DeleteBookId(ctx context.Context, bookId int) error {
-	if err := s.repo.DeleteBookId(ctx, bookId); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *ReviewService) UpdateBook(ctx context.Context, bookId int, name string) error {
-	if err := s.repo.UpdateBook(ctx, bookId, name); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *ReviewService) ReportReview(ctx context.Context, reviewId int, problem string) error {
-	if err := s.repo.ReportReview(ctx, reviewId, problem); err != nil {
-		return err
-	}
-
-	return nil
+type BookMessage struct {
+	BookId int    `json:"book_id"`
+	Name   string `json:"name"`
 }

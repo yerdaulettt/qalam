@@ -12,6 +12,7 @@ import (
 	"user-service/internal/configs"
 	"user-service/internal/httphandler"
 	"user-service/internal/postgres"
+	"user-service/internal/user"
 
 	"github.com/joho/godotenv"
 )
@@ -39,15 +40,12 @@ func main() {
 
 	r := http.NewServeMux()
 
-	authR := postgres.NewAuthRepo(db)
+	userR := postgres.NewUserRepo(db)
 	jwtAuth := auth.NewJwtAuth(cfg.JwtSecret, cfg.JwtAccessTtl, cfg.JwtRefreshTtl)
-	authS := auth.NewAuthService(authR, jwtAuth)
-	authRouter := httphandler.NewAuthRouter(authS)
+	userS := user.NewUserService(userR, jwtAuth)
+	userRouter := httphandler.NewUserRouter(userS, jwtAuth)
 
-	profileRouter := httphandler.NewProfileRouter(authS, jwtAuth)
-
-	r.Handle("/auth/", http.StripPrefix("/auth", authRouter))
-	r.Handle("/api/", http.StripPrefix("/api", profileRouter))
+	r.Handle("/api/", http.StripPrefix("/api", userRouter))
 
 	server := &http.Server{
 		Addr:    ":8081",

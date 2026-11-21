@@ -4,29 +4,26 @@ import (
 	"net/http"
 
 	"user-service/internal/auth"
+	"user-service/internal/user"
 
 	"github.com/go-chi/chi/v5"
 )
 
-func NewAuthRouter(s *auth.AuthService) http.Handler {
-	r := http.NewServeMux()
-
-	authH := NewAuthHandler(s)
-
-	r.HandleFunc("POST /register", authH.UserRegister)
-	r.HandleFunc("POST /login", authH.Login)
-	r.HandleFunc("POST /refresh", authH.TokenRefresh)
-
-	return r
-}
-
-func NewProfileRouter(s *auth.AuthService, j *auth.JwtAuth) http.Handler {
+func NewUserRouter(s *user.UserService, j *auth.JwtAuth) http.Handler {
 	r := chi.NewRouter()
 
-	r.Use(JwtMiddleware(j))
+	userH := newUserHandler(s)
 
-	authH := NewAuthHandler(s)
-	r.HandleFunc("GET /my/profile", authH.GetMyProfile)
+	r.Group(func(r chi.Router) {
+		r.HandleFunc("POST /auth/register", userH.UserRegister)
+		r.HandleFunc("POST /auth/login", userH.Login)
+		r.HandleFunc("POST /auth/refresh", userH.TokenRefresh)
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Use(JwtMiddleware(j))
+		r.HandleFunc("GET /my/profile", userH.GetMyProfile)
+	})
 
 	return r
 }

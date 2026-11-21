@@ -4,21 +4,21 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"user-service/internal/auth"
+	"user-service/internal/user"
 )
 
-type authHandler struct {
-	service *auth.AuthService
+type userHandler struct {
+	service *user.UserService
 }
 
-func NewAuthHandler(s *auth.AuthService) *authHandler {
-	return &authHandler{service: s}
+func newUserHandler(s *user.UserService) *userHandler {
+	return &userHandler{service: s}
 }
 
-func (h *authHandler) UserRegister(w http.ResponseWriter, r *http.Request) {
+func (h *userHandler) UserRegister(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var userReg auth.RegisterReq
+	var userReg user.RegisterReq
 
 	err := json.NewDecoder(r.Body).Decode(&userReg)
 	if err != nil {
@@ -26,24 +26,24 @@ func (h *authHandler) UserRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.service.Register(r.Context(), userReg)
+	u, err := h.service.Register(r.Context(), userReg)
 	if err != nil {
 		errorResponse(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(&user)
+	err = json.NewEncoder(w).Encode(&u)
 	if err != nil {
 		errorResponse(w, err)
 		return
 	}
 }
 
-func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
+func (h *userHandler) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var ul auth.UserLogin
+	var ul user.UserLogin
 
 	err := json.NewDecoder(r.Body).Decode(&ul)
 	if err != nil {
@@ -64,7 +64,7 @@ func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *authHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
+func (h *userHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	userId, ok := r.Context().Value("userId").(int)
@@ -73,20 +73,20 @@ func (h *authHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.service.GetMyProfile(r.Context(), userId)
+	u, err := h.service.GetMyProfile(r.Context(), userId)
 	if err != nil {
 		errorResponse(w, err)
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(&user)
+	err = json.NewEncoder(w).Encode(&u)
 	if err != nil {
 		errorResponse(w, err)
 		return
 	}
 }
 
-func (h *authHandler) TokenRefresh(w http.ResponseWriter, r *http.Request) {
+func (h *userHandler) TokenRefresh(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var refresh struct {

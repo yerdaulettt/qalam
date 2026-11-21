@@ -1,27 +1,32 @@
-package auth
+package user
 
 import (
 	"context"
 	"slices"
 )
 
-type AuthRepository interface {
+type userRepository interface {
 	GetUser(ctx context.Context, username string) (UserVerify, error)
 	GetUsernameStatus(ctx context.Context, username string) (bool, error)
 	Register(ctx context.Context, u RegisterReq) (User, error)
 	GetMyProfile(ctx context.Context, userId int) (User, error)
 }
 
-type AuthService struct {
-	repo      AuthRepository
-	jwtHelper *JwtAuth
+type jwtAuth interface {
+	NewTokens(userId int, role string) (JwtTokens, error)
+	RefreshAccess(refresh string) (string, error)
 }
 
-func NewAuthService(r AuthRepository, j *JwtAuth) *AuthService {
-	return &AuthService{repo: r, jwtHelper: j}
+type UserService struct {
+	repo      userRepository
+	jwtHelper jwtAuth
 }
 
-func (s *AuthService) Register(ctx context.Context, u RegisterReq) (User, error) {
+func NewUserService(r userRepository, j jwtAuth) *UserService {
+	return &UserService{repo: r, jwtHelper: j}
+}
+
+func (s *UserService) Register(ctx context.Context, u RegisterReq) (User, error) {
 	if u.Name == "" || u.Username == "" || u.Password == "" {
 		return User{}, ErrEmptyFields
 	}
@@ -59,28 +64,28 @@ func (s *AuthService) Register(ctx context.Context, u RegisterReq) (User, error)
 	return newUser, nil
 }
 
-func (s *AuthService) Login(ctx context.Context, ul UserLogin) (JwtTokens, error) {
+func (s *UserService) Login(ctx context.Context, ul UserLogin) (JwtTokens, error) {
 	if ul.Username == "" || ul.Password == "" {
 		return JwtTokens{}, ErrEmptyFields
 	}
 
-	user, err := s.repo.GetUser(ctx, ul.Username)
+	u, err := s.repo.GetUser(ctx, ul.Username)
 	if err != nil {
 		return JwtTokens{}, err
 	}
 
-	err = checkPassword(user.Hash, ul.Password)
+	err = checkPassword(u.Hash, ul.Password)
 	if err != nil {
 		return JwtTokens{}, ErrIncorrectPassword
 	}
 
-	tokens, err := s.jwtHelper.newTokens(user.Id, user.Role)
+	tokens, err := s.jwtHelper.NewTokens(u.Id, u.Role)
 
 	return tokens, nil
 }
 
-func (s *AuthService) TokenRefresh(ctx context.Context, refresh string) (string, error) {
-	access, err := s.jwtHelper.refreshAccess(refresh)
+func (s *UserService) TokenRefresh(ctx context.Context, refresh string) (string, error) {
+	access, err := s.jwtHelper.RefreshAccess(refresh)
 	if err != nil {
 		return "", err
 	}
@@ -88,7 +93,7 @@ func (s *AuthService) TokenRefresh(ctx context.Context, refresh string) (string,
 	return access, nil
 }
 
-func (s *AuthService) GetMyProfile(ctx context.Context, userId int) (User, error) {
+func (s *UserService) GetMyProfile(ctx context.Context, userId int) (User, error) {
 	u, err := s.repo.GetMyProfile(ctx, userId)
 	if err != nil {
 		return User{}, err
