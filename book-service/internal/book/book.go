@@ -1,68 +1,76 @@
 package book
 
-import (
-	"context"
+import "errors"
+
+var (
+	ErrNotFound = errors.New("not found")
+	ErrFilter   = errors.New("Incorrect filter")
 )
 
-type BookRepository interface {
-	GetBooks(ctx context.Context, filters []Filter) ([]Book, error)
-	GetBook(ctx context.Context, bookId int) (*BookDetails, error)
-	GetGenres(ctx context.Context) ([]GenreDetails, error)
-	AddRating(ctx context.Context, bookId, userId, rating int) error
+type Genre struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
 }
 
-type BookService struct {
-	repo BookRepository
+type GenreDetails struct {
+	Genre
+	TotalBooks int `json:"total_books"`
 }
 
-func NewBookService(r BookRepository) *BookService {
-	return &BookService{repo: r}
+type Book struct {
+	Id            int     `json:"id"`
+	Name          string  `json:"name"`
+	AuthorId      int     `json:"author_id"`
+	AuthorName    string  `json:"author_name"`
+	AuthorSurname string  `json:"author_surname"`
+	Rating        int     `json:"rating"`
+	RatingCount   int     `json:"rating_count"`
+	Genres        []Genre `json:"genres"`
 }
 
-func (s *BookService) GetBooks(ctx context.Context, filters []Filter) ([]Book, error) {
-	columns := map[string]bool{
-		"author_name":    true,
-		"author_surname": true,
-		"rating":         true,
-	}
-
-	for _, f := range filters {
-		if !columns[f.Column] {
-			return nil, ErrFilter
-		}
-	}
-
-	books, err := s.repo.GetBooks(ctx, filters)
-	if err != nil {
-		return nil, err
-	}
-
-	return books, nil
+type NewBook struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	AuthorId    int    `json:"author_id"`
+	Genres      []int  `json:"genres"`
 }
 
-func (s *BookService) GetBook(ctx context.Context, bookId int) (*BookDetails, error) {
-	b, err := s.repo.GetBook(ctx, bookId)
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
+type BookUpdate struct {
+	Id          int    `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	AuthorId    int    `json:"author_id"`
 }
 
-func (s *BookService) GetGenres(ctx context.Context) ([]GenreDetails, error) {
-	g, err := s.repo.GetGenres(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return g, nil
+type BookDetails struct {
+	Id            int     `json:"id"`
+	Name          string  `json:"name"`
+	Description   string  `json:"description"`
+	AuthorId      int     `json:"author_id"`
+	AuthorName    string  `json:"author_name"`
+	AuthorSurname string  `json:"author_surname"`
+	Genres        []Genre `json:"genres"`
 }
 
-func (s *BookService) AddRating(ctx context.Context, bookId, userId, rating int) error {
-	err := s.repo.AddRating(ctx, bookId, userId, rating)
-	if err != nil {
-		return err
-	}
+type Author struct {
+	Id      int    `json:"id"`
+	Name    string `json:"name"`
+	Surname string `json:"surname"`
+	About   string `json:"about"`
+}
 
-	return nil
+type NewAuthor struct {
+	Name    string `json:"name"`
+	Surname string `json:"surname"`
+	About   string `json:"about"`
+}
+
+type BookDeletedEvent struct {
+	BookId int `json:"book_id"`
+}
+
+type Filter struct {
+	Column    string
+	Operation string
+	Value     string
 }

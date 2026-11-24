@@ -2,31 +2,25 @@ package book
 
 import (
 	"context"
-	"encoding/json"
 )
 
 type adminRepository interface {
 	NewGenre(ctx context.Context, name string) (Genre, error)
-	UpdateGenre(ctx context.Context, genreId int, name string) (Genre, error)
-	DeleteGenre(ctx context.Context, genreId int) (Genre, error)
+	UpdateGenre(ctx context.Context, genreId int, name string) error
+	DeleteGenre(ctx context.Context, genreId int) error
 	AddBook(ctx context.Context, newBook NewBook) error
-	UpdateBook(ctx context.Context, newBook *BookUpdate) (*BookUpdate, error)
-	DeleteBook(ctx context.Context, bookId int) error
+	UpdateBook(ctx context.Context, newBook BookUpdate) error
+	DeleteBook(ctx context.Context, b BookDeletedEvent) error
 	AddAuthor(ctx context.Context, newAuthor *NewAuthor) (*Author, error)
-	UpdateAuthor(ctx context.Context, authorId int, newAuthor *NewAuthor) (*Author, error)
-}
-
-type adminPublisher interface {
-	Publish(ctx context.Context, message []byte, routeKey string) error
+	UpdateAuthor(ctx context.Context, authorId int, newAuthor NewAuthor) error
 }
 
 type AdminService struct {
-	repo      adminRepository
-	publisher adminPublisher
+	repo adminRepository
 }
 
-func NewAdminService(r adminRepository, p adminPublisher) *AdminService {
-	return &AdminService{repo: r, publisher: p}
+func NewAdminService(r adminRepository) *AdminService {
+	return &AdminService{repo: r}
 }
 
 func (s *AdminService) NewGenre(ctx context.Context, name string) (Genre, error) {
@@ -38,22 +32,20 @@ func (s *AdminService) NewGenre(ctx context.Context, name string) (Genre, error)
 	return g, nil
 }
 
-func (s *AdminService) UpdateGenre(ctx context.Context, genreId int, name string) (Genre, error) {
-	g, err := s.repo.UpdateGenre(ctx, genreId, name)
-	if err != nil {
-		return Genre{}, err
+func (s *AdminService) UpdateGenre(ctx context.Context, genreId int, name string) error {
+	if err := s.repo.UpdateGenre(ctx, genreId, name); err != nil {
+		return err
 	}
 
-	return g, nil
+	return nil
 }
 
-func (s *AdminService) DeleteGenre(ctx context.Context, genreId int) (Genre, error) {
-	g, err := s.repo.DeleteGenre(ctx, genreId)
-	if err != nil {
-		return Genre{}, err
+func (s *AdminService) DeleteGenre(ctx context.Context, genreId int) error {
+	if err := s.repo.DeleteGenre(ctx, genreId); err != nil {
+		return err
 	}
 
-	return g, nil
+	return nil
 }
 
 func (s *AdminService) AddBook(ctx context.Context, newBook NewBook) error {
@@ -65,37 +57,17 @@ func (s *AdminService) AddBook(ctx context.Context, newBook NewBook) error {
 	return nil
 }
 
-func (s *AdminService) UpdateBook(ctx context.Context, newBook *BookUpdate) (*BookUpdate, error) {
-	b, err := s.repo.UpdateBook(ctx, newBook)
+func (s *AdminService) UpdateBook(ctx context.Context, newBook BookUpdate) error {
+	err := s.repo.UpdateBook(ctx, newBook)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	message, err := json.Marshal(BookMessage{BookId: b.Id, Name: b.Name})
-	if err != nil {
-		return nil, err
-	}
-
-	err = s.publisher.Publish(ctx, message, "book.updated")
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
+	return nil
 }
 
 func (s *AdminService) DeleteBook(ctx context.Context, bookId int) error {
-	err := s.repo.DeleteBook(ctx, bookId)
-	if err != nil {
-		return err
-	}
-
-	message, err := json.Marshal(BookDeletedMessage{BookId: bookId})
-	if err != nil {
-		return err
-	}
-
-	err = s.publisher.Publish(ctx, message, "book.deleted")
+	err := s.repo.DeleteBook(ctx, BookDeletedEvent{BookId: bookId})
 	if err != nil {
 		return err
 	}
@@ -112,11 +84,11 @@ func (s *AdminService) AddAuthor(ctx context.Context, newAuthor *NewAuthor) (*Au
 	return a, nil
 }
 
-func (s *AdminService) UpdateAuthor(ctx context.Context, authorId int, newAuthor *NewAuthor) (*Author, error) {
-	a, err := s.repo.UpdateAuthor(ctx, authorId, newAuthor)
+func (s *AdminService) UpdateAuthor(ctx context.Context, authorId int, newAuthor NewAuthor) error {
+	err := s.repo.UpdateAuthor(ctx, authorId, newAuthor)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return a, nil
+	return nil
 }

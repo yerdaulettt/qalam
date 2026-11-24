@@ -24,8 +24,8 @@ func errorResponse(w http.ResponseWriter, err error) {
 
 	log.Println(err)
 
-	switch err {
-	case book.ErrNotFound:
+	switch {
+	case errors.Is(err, book.ErrNotFound):
 		w.WriteHeader(http.StatusNotFound)
 	default:
 		w.WriteHeader(http.StatusInternalServerError)

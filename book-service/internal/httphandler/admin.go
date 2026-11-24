@@ -61,13 +61,7 @@ func (h *adminHandler) UpdateGenre(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	genre, err := h.service.UpdateGenre(r.Context(), genreId, g.Name)
-	if err != nil {
-		errorResponse(w, err)
-		return
-	}
-
-	err = json.NewEncoder(w).Encode(&genre)
+	err = h.service.UpdateGenre(r.Context(), genreId, g.Name)
 	if err != nil {
 		errorResponse(w, err)
 		return
@@ -83,13 +77,7 @@ func (h *adminHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	genre, err := h.service.DeleteGenre(r.Context(), genreId)
-	if err != nil {
-		errorResponse(w, err)
-		return
-	}
-
-	err = json.NewEncoder(w).Encode(&genre)
+	err = h.service.DeleteGenre(r.Context(), genreId)
 	if err != nil {
 		errorResponse(w, err)
 		return
@@ -134,13 +122,7 @@ func (h *adminHandler) UpdateBook(w http.ResponseWriter, r *http.Request) {
 
 	newBook.Id = bookId
 
-	b, err := h.service.UpdateBook(r.Context(), &newBook)
-	if err != nil {
-		errorResponse(w, err)
-		return
-	}
-
-	err = json.NewEncoder(w).Encode(&b)
+	err = h.service.UpdateBook(r.Context(), newBook)
 	if err != nil {
 		errorResponse(w, err)
 		return
@@ -206,13 +188,7 @@ func (h *adminHandler) UpdateAuthor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a, err := h.service.UpdateAuthor(r.Context(), authorId, &newAuthor)
-	if err != nil {
-		errorResponse(w, err)
-		return
-	}
-
-	err = json.NewEncoder(w).Encode(&a)
+	err = h.service.UpdateAuthor(r.Context(), authorId, newAuthor)
 	if err != nil {
 		errorResponse(w, err)
 		return

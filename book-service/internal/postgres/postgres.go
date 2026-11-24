@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -50,11 +49,11 @@ func filterHelper(query string, filters []book.Filter, columns map[string]string
 	return b.String(), params
 }
 
-func updateHelper(table string, columns, columnsReturn []string) string {
+func updateHelper(table string, columns []string) string {
 	var b strings.Builder
 
 	if len(columns) == 1 {
-		fmt.Fprintf(&b, "update %s set %s = $1 where id = $2 returning %s", table, columns[0], strings.Join(columnsReturn, ", "))
+		fmt.Fprintf(&b, "update %s set %s = $1 where id = $2", table, columns[0])
 		return b.String()
 	}
 
@@ -66,9 +65,7 @@ func updateHelper(table string, columns, columnsReturn []string) string {
 		b.WriteString(strconv.Itoa(i + 2))
 	}
 
-	fmt.Fprintf(&b, ") where id = $%d returning %s", len(columns)+1, strings.Join(columnsReturn, ", "))
-
-	log.Println(b.String())
+	fmt.Fprintf(&b, ") where id = $%d", len(columns)+1)
 
 	return b.String()
 }

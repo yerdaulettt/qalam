@@ -7,6 +7,7 @@ services:
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+    command: "postgres -c wal_level=logical"
     volumes:
       - "./:/docker-entrypoint-initdb.d"
       - "dbdata:/var/lib/postgresql/data"
@@ -33,6 +34,21 @@ services:
       "migrate -path=/book-migrations -database ${BOOK_DB} up
       migrate -path=/user-migrations -database ${USER_DB} up
       migrate -path=/review-migrations -database ${REVIEW_DB} up"
+
+  debezium:
+    image: quay.io/debezium/server:3.7.1.Final
+    container_name: debezium
+    ports:
+      - "8084:8084"
+    volumes:
+      - "./debezium:/debezium/config"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      rabbit:
+        condition: service_healthy
 
   rabbit:
     image: rabbitmq:4.3.5-management-alpine

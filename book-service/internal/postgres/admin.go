@@ -2,14 +2,11 @@ package postgres
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	"book-service/internal/book"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -33,30 +30,34 @@ func (r *adminRepo) NewGenre(ctx context.Context, name string) (book.Genre, erro
 	return g, nil
 }
 
-func (r *adminRepo) UpdateGenre(ctx context.Context, genreId int, name string) (book.Genre, error) {
-	query := "update genres set name = $1 where id = $2 returning id, name"
+func (r *adminRepo) UpdateGenre(ctx context.Context, genreId int, name string) error {
+	query := "update genres set name = $1 where id = $2"
 
-	var g book.Genre
-	if err := r.db.QueryRow(ctx, query, name, genreId).Scan(&g.Id, &g.Name); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return book.Genre{}, book.ErrNotFound
-		}
-
-		return book.Genre{}, err
+	res, err := r.db.Exec(ctx, query, name, genreId)
+	if err != nil {
+		return err
 	}
 
-	return g, nil
+	if res.RowsAffected() == 0 {
+		return book.ErrNotFound
+	}
+
+	return nil
 }
 
-func (r *adminRepo) DeleteGenre(ctx context.Context, genreId int) (book.Genre, error) {
-	query := "delete from genres where id = $1 returning id, name"
+func (r *adminRepo) DeleteGenre(ctx context.Context, genreId int) error {
+	query := "delete from genres where id = $1"
 
-	var g book.Genre
-	if err := r.db.QueryRow(ctx, query, genreId).Scan(&g.Id, &g.Name); err != nil {
-		return book.Genre{}, err
+	res, err := r.db.Exec(ctx, query, genreId)
+	if err != nil {
+		return err
 	}
 
-	return g, nil
+	if res.RowsAffected() == 0 {
+		return book.ErrNotFound
+	}
+
+	return nil
 }
 
 func (r *adminRepo) AddBook(ctx context.Context, newBook book.NewBook) error {
@@ -72,7 +73,7 @@ func (r *adminRepo) AddBook(ctx context.Context, newBook book.NewBook) error {
 	err = t.QueryRow(ctx, query, newBook.Name, newBook.Description, newBook.AuthorId).Scan(&bookId)
 	if err != nil {
 		if err, ok := err.(*pgconn.PgError); ok && err.Code == "23503" {
-			return book.ErrAuthorNotFound
+			return fmt.Errorf("Author %d %w", newBook.AuthorId, book.ErrNotFound)
 		}
 
 		return err
@@ -92,7 +93,7 @@ func (r *adminRepo) AddBook(ctx context.Context, newBook book.NewBook) error {
 		_, err = t.Exec(ctx, b.String(), params...)
 		if err != nil {
 			if err, ok := err.(*pgconn.PgError); ok && err.Code == "23503" {
-				return book.ErrGenreNotFound
+				return fmt.Errorf("Genre %w", book.ErrNotFound)
 			}
 
 			return err
@@ -107,7 +108,7 @@ func (r *adminRepo) AddBook(ctx context.Context, newBook book.NewBook) error {
 	return nil
 }
 
-func (r *adminRepo) UpdateBook(ctx context.Context, newBook *book.BookUpdate) (*book.BookUpdate, error) {
+func (r *adminRepo) UpdateBook(ctx context.Context, newBook book.BookUpdate) error {
 	columns := []string{}
 	params := []any{}
 
@@ -127,31 +128,55 @@ func (r *adminRepo) UpdateBook(ctx context.Context, newBook *book.BookUpdate) (*
 	}
 
 	params = append(params, newBook.Id)
+	query := updateHelper("books", columns)
 
-	query := updateHelper("books", columns, []string{"id, name, description, author_id"})
-	log.Println(params...)
-	var b book.BookUpdate
-
-	err := r.db.QueryRow(ctx, query, params...).Scan(&b.Id, &b.Name, &b.Description, &b.AuthorId)
+	t, err := r.db.Begin(ctx)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, book.ErrNotFound
-		}
-
-		return nil, err
+		return err
 	}
+	defer t.Rollback(ctx)
 
-	return &b, nil
-}
-
-func (r *adminRepo) DeleteBook(ctx context.Context, bookId int) error {
-	res, err := r.db.Exec(ctx, "delete from books where id = $1", bookId)
+	res, err := t.Exec(ctx, query, params...)
 	if err != nil {
 		return err
 	}
 
 	if res.RowsAffected() == 0 {
 		return book.ErrNotFound
+	}
+
+	err = t.Commit(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *adminRepo) DeleteBook(ctx context.Context, b book.BookDeletedEvent) error {
+	t, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer t.Rollback(ctx)
+
+	res, err := t.Exec(ctx, "delete from books where id = $1", b.BookId)
+	if err != nil {
+		return err
+	}
+
+	if res.RowsAffected() == 0 {
+		return book.ErrNotFound
+	}
+
+	_, err = t.Exec(ctx, "insert into outbox values (default, 'book.deleted', $1)", b)
+	if err != nil {
+		return err
+	}
+
+	err = t.Commit(ctx)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -169,7 +194,7 @@ func (r *adminRepo) AddAuthor(ctx context.Context, newAuthor *book.NewAuthor) (*
 	return &a, nil
 }
 
-func (r *adminRepo) UpdateAuthor(ctx context.Context, authorId int, newAuthor *book.NewAuthor) (*book.Author, error) {
+func (r *adminRepo) UpdateAuthor(ctx context.Context, authorId int, newAuthor book.NewAuthor) error {
 	columns := []string{}
 	params := []any{}
 
@@ -189,17 +214,16 @@ func (r *adminRepo) UpdateAuthor(ctx context.Context, authorId int, newAuthor *b
 	}
 
 	params = append(params, authorId)
+	query := updateHelper("authors", columns)
 
-	query := updateHelper("authors", columns, []string{"id, name, surname, about"})
-	var a book.Author
-
-	if err := r.db.QueryRow(ctx, query, params...).Scan(&a.Id, &a.Name, &a.Surname, &a.About); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, book.ErrNotFound
-		}
-
-		return nil, err
+	res, err := r.db.Exec(ctx, query, params...)
+	if err != nil {
+		return err
 	}
 
-	return &a, nil
+	if res.RowsAffected() == 0 {
+		return book.ErrNotFound
+	}
+
+	return nil
 }

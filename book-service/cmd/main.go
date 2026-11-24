@@ -12,7 +12,6 @@ import (
 	"book-service/internal/configs"
 	"book-service/internal/httphandler"
 	"book-service/internal/postgres"
-	"book-service/internal/rabbitmq"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
@@ -39,20 +38,6 @@ func main() {
 	}
 	defer db.Close()
 
-	mq, err := rabbitmq.NewConn(ctx, configs.NewRabbitUrl())
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer mq.Close(ctx)
-
-	p, err := mq.NewPublisher(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer p.Close(ctx)
-
-	adminP := rabbitmq.NewAdminPublisher(p, mq.Management)
-
 	jwtAuth, err := configs.NewJwtAuth()
 	if err != nil {
 		log.Fatal(err)
@@ -67,7 +52,7 @@ func main() {
 	bookRouter := httphandler.NewBookRouter(bookS, jwtAuth)
 
 	adminR := postgres.NewAdminRepo(db)
-	adminS := book.NewAdminService(adminR, adminP)
+	adminS := book.NewAdminService(adminR)
 	adminRouter := httphandler.NewAdminRouter(adminS, jwtAuth)
 
 	r.Mount("/api", bookRouter)
